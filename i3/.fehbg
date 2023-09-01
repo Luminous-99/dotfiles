@@ -1,0 +1,2 @@
+#!/bin/sh
+feh --bg-fit '../Background/Destruction_of_Leviathan.png' 

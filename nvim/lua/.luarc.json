@@ -1,0 +1,21 @@
+{
+    "workspace.library": [
+        "/home/luminous99/.config/nvim",
+        "/home/luminous99/.local/share/nvim/site",
+        "/home/luminous99/.local/share/nvim/site/pack/packer/start/fd",
+        "/home/luminous99/.local/share/nvim/site/pack/packer/start/mason-lspconfig.nvim",
+        "/home/luminous99/.local/share/nvim/site/pack/packer/start/mason.nvim",
+        "/home/luminous99/.local/share/nvim/site/pack/packer/start/nvim-lspconfig",
+        "/home/luminous99/.local/share/nvim/site/pack/packer/start/nvim-treesitter",
+        "/home/luminous99/.local/share/nvim/site/pack/packer/start/packer.nvim",
+        "/home/luminous99/.local/share/nvim/site/pack/packer/start/plenary.nvim",
+        "/home/luminous99/.local/share/nvim/site/pack/packer/start/presence.nvim",
+        "/home/luminous99/.local/share/nvim/site/pack/packer/start/ripgrep",
+        "/home/luminous99/.local/share/nvim/site/pack/packer/start/telescope.nvim",
+        "/home/luminous99/.local/share/nvim/site/pack/packer/start/tokyonight.nvim",
+        "/home/luminous99/Downloads/nvim-linux64/share/nvim/runtime",
+        "/home/luminous99/Downloads/nvim-linux64/lib/nvim",
+        "${3rd}/luassert/library"
+    ],
+    "workspace.checkThirdParty": false
+}
