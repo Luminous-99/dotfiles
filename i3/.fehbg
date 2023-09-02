@@ -1,2 +1,2 @@
 #!/bin/sh
-feh --bg-fit '../Background/Destruction_of_Leviathan.png' 
+feh --no-fehbg --bg-scale "$HOME/dotfiles/Background/Destruction_of_Leviathan.png"

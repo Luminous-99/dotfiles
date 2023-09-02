@@ -205,6 +205,6 @@ bindsym $mod+shift+n  exec --no-startup-id rofi -show drun
 
 exec_always --no-startup-id $HOME/dotfiles/polybar/launch.sh
 
-exec --no-startup-id ~/dotfiles/i3/.fehbg &
+exec_always --no-startup-id ~/dotfiles/i3/.fehbg &
 exec_always --no-startup-id dunst &
 exec_always --no-startup-id picom -b --vsync 
