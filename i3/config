@@ -197,6 +197,7 @@ title_align center
 bindsym $mod+shift+u  exec --no-startup-id setxkbmap -layout us
 bindsym $mod+shift+t  exec --no-startup-id setxkbmap -layout tr
 bindsym $mod+t  exec --no-startup-id polybar-msg cmd toggle
+bindsym $mod+shift+f  exec --no-startup-id flameshot gui
 bindsym $mod+shift+n  exec --no-startup-id rofi -show drun
 
 #exec_always --no-startup-id "setxkbmap -layout us,tr"
