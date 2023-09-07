@@ -98,7 +98,7 @@ floating_modifier $mod
 bindsym $mod+space focus mode_toggle
 
 # focus the parent container
-bindsym $mod+a focus parent
+#bindsym $mod+a focus parent
 
 # focus the child container
 #bindsym $mod+d focus child
@@ -181,17 +181,17 @@ bindsym $mod+r mode "resize"
 #    
 #    position top 
 #
-#    status_command polybar 
+#    status_command i3status 
 #
 #}
 
 bindsym XF86MonBrightnessUp exec --no-startup-id xbacklight -inc 10 
 bindsym XF86MonBrightnessDown exec --no-startup-id xbacklight -dec 10 
 
-default_border normal 0
+default_border pixel 0
 title_align center
 
-#gaps inner 0px
+#gaps inner 5px
 #gaps top 20px
 
 bindsym $mod+shift+u  exec --no-startup-id setxkbmap -layout us
@@ -199,10 +199,6 @@ bindsym $mod+shift+t  exec --no-startup-id setxkbmap -layout tr
 bindsym $mod+t  exec --no-startup-id polybar-msg cmd toggle
 bindsym $mod+shift+f  exec --no-startup-id flameshot gui
 bindsym $mod+shift+n  exec --no-startup-id rofi -show drun
-
-#exec_always --no-startup-id "setxkbmap -layout us,tr"
-#exec_always --no-startup-id "-option grp:alt_shift_toggle"
-
 
 exec_always --no-startup-id $HOME/dotfiles/polybar/launch.sh
 
