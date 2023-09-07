@@ -26,20 +26,20 @@ alert = #A54242
 disabled = #707880
 
 [bar/bar]
-width = 45%
-height = 15pt
-radius = 5
+width = 40%
+height = 40pt
 offset-x = 30%
+offset-y = 50%
 
-; dpi = 64
+dpi = 86
 
 background = ${colors.background}
 foreground = ${colors.foreground}
 
 line-size = 2pt
 
-border-size = 4pt
-border-color = #00000000
+; border-size = 4pt
+; border-color = #00000000
 
 padding-left = 1
 padding-right = 1
