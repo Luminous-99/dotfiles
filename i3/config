@@ -188,7 +188,8 @@ bindsym $mod+r mode "resize"
 bindsym XF86MonBrightnessUp exec --no-startup-id xbacklight -inc 10 
 bindsym XF86MonBrightnessDown exec --no-startup-id xbacklight -dec 10 
 
-default_border pixel 0
+for_window [floating] border pixel 0
+for_window [tiling] border pixel 0
 title_align center
 
 #gaps inner 5px
