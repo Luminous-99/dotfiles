@@ -4,8 +4,8 @@
 
 # Enable the subsequent settings only in interactive sessions
 case $- in
-  *i*) ;;
-    *) return;;
+    *i*) ;;
+      *) return;;
 esac
 
 
@@ -41,7 +41,7 @@ fi
 
 # set a fancy prompt (non-color, unless we know we "want" color)
 case "$TERM" in
-    xterm-color|*-256color) color_prompt=yes;;
+    xterm-color|*-256color|xterm-kitty) color_prompt=yes;;
 esac
 
 # uncomment for a colored prompt, if the terminal has the capability; turned
@@ -128,4 +128,21 @@ export ANDROID_HOME=$HOME/Android/Sdk
 export PATH=$PATH:$ANDROID_HOME/emulator
 export PATH=$PATH:$ANDROID_HOME/platform-tools
 
+
+
+#Bash Prompt
+
+name="\[\e[1;32m\]\u@\h"
+time="\[\e[1;36m\]\d \t"
+workspace="\[\e[1;36m\]\W"
+new_line="\[\n\]"
+upper_container="\[\e[0;32m\]{ $name \[\e[0;39m\]| $time \e[0;32m\]}"
+
+#original
+#PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\e[01;32m\]\u@\h\[\e[00m\]:\[\e[01;34m\]\w\[\e[00m\]\$"
+
+export PS1="$new_line \[\e[0;32m\]╭╴$upper_container ${debian_chroot:+($debian_chroot)} $new_line \[\e[0;32m\]╰╴($workspace\[\e[0;32m)\]\$ \[\e[0m\]"
+
+
 clear
+
