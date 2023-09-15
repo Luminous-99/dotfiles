@@ -90,7 +90,7 @@ lspconf.intelephense.setup{ filetypes = { "php" }}
 
 lspconf.clangd.setup({
     cmd = { "clangd", "--header-insertion=never",
-    "--all-scopes-completion", "--completion-style=detailed" , "--enable-config"},
+    "--completion-style=detailed" , "--enable-config", "--function-arg-placeholders=0", "--cross-file-rename", "--background-index"},
 })
 
 lspconf.lua_ls.setup{
