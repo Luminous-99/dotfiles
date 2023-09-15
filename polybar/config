@@ -26,10 +26,10 @@ alert = #A54242
 disabled = #707880
 
 [bar/bar]
-width = 40%
+width = 28%
 height = 40pt
-offset-x = 30%
-offset-y = 50%
+offset-x = 36%
+offset-y = 55%
 
 dpi = 86
 
@@ -38,10 +38,8 @@ foreground = ${colors.foreground}
 
 line-size = 2pt
 
-; border-size = 4pt
-; border-color = #00000000
 
-padding-left = 1
+#padding-left = 1
 padding-right = 1
 
 module-margin = 1
@@ -51,7 +49,6 @@ separator-foreground = ${colors.disabled}
 
 font-0 = "monospace:size=11;2"
 
-modules-left = xworkspaces 
 modules-right = filesystem xkeyboard battery backlight pulseaudio  memory cpu date
 
 cursor-click = pointer
@@ -171,7 +168,7 @@ label-discharging-foreground = ${colors.primary}
 
 label-discharging = ↓ %percentage%%
 label-charging = ↑ %percentage%%
-label-full = Fully charged
+label-full = Full
 
 poll-interval = 1
 
