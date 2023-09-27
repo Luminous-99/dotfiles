@@ -209,3 +209,4 @@ exec_always --no-startup-id $HOME/dotfiles/polybar/launch.sh
 exec_always --no-startup-id ~/dotfiles/i3/.fehbg &
 exec_always --no-startup-id dunst -conf ~/dotfiles/dunst/dunstrc &
 exec_always --no-startup-id picom -b --vsync 
+exec --no-startup-id kitty 
