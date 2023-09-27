@@ -157,7 +157,7 @@ label-connected = %{F#F0C674}%ifname%%{F-} %essid% %local_ip%
 type = internal/battery
 full-at = 99
 
-low-at = 5
+low-at = 10
 
 battery = BAT0
 adapter = ADP1

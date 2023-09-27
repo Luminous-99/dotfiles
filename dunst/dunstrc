@@ -72,7 +72,7 @@
     # screen width minus the width defined in within the geometry option.
     # geometry = "300x5-30+20"
 
-    width  = (80,280)
+    width  = (80,320)
     height = 140
     notification_limit = 5
     origin = bottom-right
@@ -132,10 +132,10 @@
     separator_height = 1
     
     # Padding between text and separator.
-    padding = 5
+    padding = 10
     
     # Horizontal padding.
-    horizontal_padding = 5
+    horizontal_padding = 10
     
     # Define a color for the separator.
     # possible values are:

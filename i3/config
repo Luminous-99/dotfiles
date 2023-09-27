@@ -207,5 +207,5 @@ bindsym Control+Mod1+space  exec --no-startup-id dunstctl close-all
 exec_always --no-startup-id $HOME/dotfiles/polybar/launch.sh
 
 exec_always --no-startup-id ~/dotfiles/i3/.fehbg &
-exec_always --no-startup-id dunst &
+exec_always --no-startup-id dunst -conf ~/dotfiles/dunst/dunstrc &
 exec_always --no-startup-id picom -b --vsync 
