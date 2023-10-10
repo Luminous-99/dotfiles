@@ -69,9 +69,6 @@ tokyonight.setup({
     transparent = true,
     styles = {
 
-        comments = { italic = true },
-        functions = { italic = true },
-        keywords = { italic = true },
         variables = {  },
         sidebars = "transparent",
         floats = "transparent",
