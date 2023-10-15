@@ -155,10 +155,10 @@ mode "resize" {
         # Pressing right will grow the window’s width.
         # Pressing up will shrink the window’s height.
         # Pressing down will grow the window’s height.
-        bindsym h resize shrink width 10 px or 10 ppt
-        bindsym k resize grow height 10 px or 10 ppt
-        bindsym j resize shrink height 10 px or 10 ppt
-        bindsym l resize grow width 10 px or 10 ppt
+        bindsym h resize shrink width 20 px or 20 ppt
+        bindsym k resize grow height 20 px or 20 ppt
+        bindsym j resize shrink height 20 px or 20 ppt
+        bindsym l resize grow width 20 px or 20 ppt
 
 
         # same bindings, but for the arrow keys
@@ -192,12 +192,21 @@ for_window [floating] border pixel 0
 for_window [tiling]   border pixel 2
 title_align center
 
-gaps inner 5px
+gaps inner 10px
+gaps outer 5px
 #gaps top 20px
 
-client.focused              #a0a0f0   #a0a0f0   #a0a0f0   #a0a0f0
+# class                     border    backgr.   text      indicator child_border
+client.focused              #a0a0f0   #a0a0f0   #000000   #a0a0f0
 client.unfocused            #000000   #000000   #000000
+
 hide_edge_borders smart
+smart_borders on
+smart_gaps on
+focus_follows_mouse no
+floating_minimum_size 400 x 200
+#floating_maximum_size 900 x 450
+
 
 bindsym $mod+shift+u  exec --no-startup-id setxkbmap -layout us
 bindsym $mod+shift+t  exec --no-startup-id setxkbmap -layout tr
