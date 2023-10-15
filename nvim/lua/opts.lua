@@ -9,7 +9,7 @@ opt.termguicolors = true
 opt.encoding= "utf-8"
 opt.fileencoding= "utf-8"
 
-vim.cmd("colorscheme tokyonight-moon")
+vim.cmd("colorscheme catppuccin")
 
 vim.api.nvim_set_hl(0,"Normal",     { bg = "none" })
 vim.api.nvim_set_hl(0,"NormalFloat",{ bg = "none" })

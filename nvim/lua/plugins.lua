@@ -7,6 +7,7 @@ require("packer").startup(function(use)
     use "andweeb/presence.nvim"
     use "nvim-treesitter/nvim-treesitter"
     use "folke/tokyonight.nvim"
+    use { "catppuccin/nvim", as = "catppuccin" }
     use "williamboman/mason.nvim"
     use "williamboman/mason-lspconfig.nvim"
     use "neovim/nvim-lspconfig"
@@ -23,8 +24,12 @@ require("packer").startup(function(use)
     use 'tpope/vim-fugitive'
 end)
 
-require("mason").setup()
-require("mason-lspconfig").setup()
+require("mason").setup({
+})
+
+require("mason-lspconfig").setup({
+    ensure_installed = { "lua_ls", "rust_analyzer", "clangd", "bashls", "cmake", "pyright" },
+})
 
 
 require("presence").setup({
@@ -41,10 +46,10 @@ require("presence").setup({
 require("telescope").setup({
     defaults = {
         prompt_prefix = "Enter>",
-        layout_strategy = "vertical",
-        layout_config = {
+--        layout_strategy = "vertical",
+        layout_config = { 
             height = 0.75,
-            width = 0.5,
+            width = 0.9,
             prompt_position = "top",
             preview_height = 0
         },
@@ -75,9 +80,19 @@ tokyonight.setup({
     }
 })
 
+local catppuccin = require"catppuccin"
+
+catppuccin.setup({
+
+    flavour = "frappe",
+    transparent_background = true,
+
+})
+
 require('nvim-treesitter.install').compilers = { 'clang' }
 
 require("nvim-treesitter.configs").setup({
+    ensure_installed = { "c", "cpp","bash","python","lua","cmake","make" },
     highlight = {
         enable = true
     }
