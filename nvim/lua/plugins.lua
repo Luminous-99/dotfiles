@@ -54,10 +54,6 @@ require("telescope").setup({
             preview_height = 0
         },
         file_ignore_patterns = {
-            "node_modules",
-            ".git",
-            "vendor",
-            "CMakeFiles",
         }
     },
 
