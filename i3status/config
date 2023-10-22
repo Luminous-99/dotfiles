@@ -14,7 +14,7 @@ order += "time"
 
 cpu_usage {
 
-    format = "All : %usage"
+    format = "Cpu : %usage"
 
 }
 
