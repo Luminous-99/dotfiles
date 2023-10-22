@@ -36,10 +36,10 @@ exec --no-startup-id nm-applet
 
 # Use pactl to adjust volume in PulseAudio.
 set $refresh_i3status killall -SIGUSR1 i3status
-bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +5% && $refresh_i3status
-bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -5% && $refresh_i3status
-bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && $refresh_i3status
-bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle && $refresh_i3status
+bindsym XF86AudioRaiseVolume exec --no-startup-id ~/dotfiles/i3/volumenotify.sh Up && $refresh_i3status
+bindsym XF86AudioLowerVolume exec --no-startup-id ~/dotfiles/i3/volumenotify.sh Down && $refresh_i3status
+bindsym XF86AudioMute exec --no-startup-id        ~/dotfiles/i3/volumenotify.sh Mute  && $refresh_i3status
+bindsym XF86AudioMicMute exec --no-startup-id     pactl set-source-mute @DEFAULT_SOURCE@ toggle && $refresh_i3status
 
 # Use Mouse+$mod to drag floating windows to their wanted position
 bindsym $mod+Shift+space floating toggle
@@ -175,18 +175,18 @@ mode "resize" {
 
 bindsym $mod+r mode "resize"
 
-# Start i3bar to display a workspace bar (plus the system information i3status
-# finds out, if available)
-#bar {
-#    
-#    position top 
-#
-#    status_command i3status 
-#
-#}
+#Start i3bar to display a workspace bar (plus the system information i3status
+#finds out, if available)
+bar {
+    
+    position bottom 
+    padding 0px 10px 0px 10px 
+    status_command i3status 
 
-bindsym XF86MonBrightnessUp exec --no-startup-id xbacklight -inc 10 
-bindsym XF86MonBrightnessDown exec --no-startup-id xbacklight -dec 10 
+}
+
+bindsym XF86MonBrightnessUp exec --no-startup-id ~/dotfiles/i3/brightnessnotify.sh Up
+bindsym XF86MonBrightnessDown exec --no-startup-id ~/dotfiles/i3/brightnessnotify.sh Down
 
 for_window [floating] border pixel 0
 for_window [tiling]   border pixel 2
@@ -204,7 +204,7 @@ hide_edge_borders smart
 smart_borders on
 smart_gaps on
 focus_follows_mouse no
-floating_minimum_size 400 x 200
+#floating_minimum_size 400 x 200
 #floating_maximum_size 900 x 450
 
 
@@ -216,9 +216,10 @@ bindsym $mod+shift+n  exec --no-startup-id rofi -show drun
 bindsym Mod1+space  exec --no-startup-id dunstctl close 
 bindsym Control+Mod1+space  exec --no-startup-id dunstctl close-all
 
-exec_always --no-startup-id $HOME/dotfiles/polybar/launch.sh
+#exec_always --no-startup-id $HOME/dotfiles/polybar/launch.sh
 
 exec_always --no-startup-id $HOME/dotfiles/i3/.fehbg &
 exec_always --no-startup-id dunst -conf ~/dotfiles/dunst/dunstrc &
 exec_always --no-startup-id picom -b --vsync 
+exec --no-startup-id firefox 
 exec --no-startup-id kitty 

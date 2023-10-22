@@ -6,11 +6,17 @@ general {
     interval = 5
 }
 
-order += "volume master"
 order += "battery 0"
 order += "disk /"
+order += "cpu_usage"
 order += "memory"
 order += "time"
+
+cpu_usage {
+
+    format = "All : %usage"
+
+}
 
 volume master {
 
@@ -35,7 +41,7 @@ time {
 battery 0 {
 
 
-        format = "%status %percentage %remaining %emptytime"
+        format = " %status %percentage %remaining %emptytime "
 
 
         format_down = "No battery"
@@ -62,13 +68,13 @@ battery 0 {
 memory {
 
 
-        format = "%used / %total Mem."
+        format = " %used / %total "
 
 }
 
 disk "/" {
 
-    format = "%free Free"
+    format = " %free Free "
 }
 
    
