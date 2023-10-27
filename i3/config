@@ -198,7 +198,7 @@ gaps outer 5px
 
 # class                     border    backgr.   text      indicator child_border
 client.focused              #a0a0f0   #a0a0f0   #000000   #a0a0f0
-client.unfocused            #000000   #000000   #000000
+client.unfocused            #000000   #000000   #a0a0f0
 
 hide_edge_borders smart
 smart_borders on
