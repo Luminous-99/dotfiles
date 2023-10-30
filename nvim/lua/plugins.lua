@@ -18,6 +18,7 @@ require("packer").startup(function(use)
     use 'hrsh7th/nvim-cmp'
     use 'L3MON4D3/LuaSnip'
     use 'saadparwaiz1/cmp_luasnip'
+    use 'folke/zen-mode.nvim'
     use { 'VonHeikemen/lsp-zero.nvim',
         branch = 'v2.x' }
     use { "folke/neodev.nvim" , opts = {} }
@@ -63,25 +64,25 @@ require("telescope").setup({
     }
 })
 
-local tokyonight = require"tokyonight"
-
-tokyonight.setup({
-
-    transparent = true,
-    styles = {
-
-        variables = {  },
-        sidebars = "transparent",
-        floats = "transparent",
-    }
-})
+--local tokyonight = require"tokyonight"
+--
+--tokyonight.setup({
+--
+--    transparent = true,
+--    styles = {
+--
+--        variables = {  },
+--        sidebars = "transparent",
+--        floats = "transparent",
+--    }
+--})
 
 local catppuccin = require"catppuccin"
 
 catppuccin.setup({
 
     flavour = "frappe",
-    transparent_background = true,
+    transparent_background = false,
 
 })
 
@@ -95,3 +96,10 @@ require("nvim-treesitter.configs").setup({
 })
 
 
+require("zen-mode").setup({
+    window = {
+        backdrop = 0.95,
+        width = 150,
+        height = 1,
+    }
+})

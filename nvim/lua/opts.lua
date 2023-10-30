@@ -11,9 +11,9 @@ opt.fileencoding= "utf-8"
 
 vim.cmd("colorscheme catppuccin")
 
-vim.api.nvim_set_hl(0,"Normal",     { bg = "none" })
-vim.api.nvim_set_hl(0,"NormalFloat",{ bg = "none" })
-vim.api.nvim_set_hl(0,"LineNr",{ fg = "#5FF05F",bg = "none" })
+--vim.api.nvim_set_hl(0,"Normal",     { bg = "none" })
+--vim.api.nvim_set_hl(0,"NormalFloat",{ bg = "none" })
+--vim.api.nvim_set_hl(0,"LineNr",{ fg = "#5FF05F",bg = "none" })
 
 map("n","<Space>ff",":Telescope find_files<cr>",{ noremap = true, silent = true })
 map("n","<Space>fg",":Telescope live_grep<cr>",{ noremap = true, silent = true })
