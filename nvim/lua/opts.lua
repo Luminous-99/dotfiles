@@ -19,3 +19,6 @@ map("n","<Space>ff",":Telescope find_files<cr>",{ noremap = true, silent = true 
 map("n","<Space>fg",":Telescope live_grep<cr>",{ noremap = true, silent = true })
 map("n","<Space>fb",":Telescope buffers<cr>",{ noremap = true, silent = true })
 map("n","<Space>fh",":Telescope help_tags<cr>",{ noremap = true, silent = true })
+map("n","<C-d>","<C-d>zz", {})
+map("n","<C-u>","<C-u>zz", {})
+map("i","<C-c>","<Esc>", {})
