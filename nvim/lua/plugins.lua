@@ -1,29 +1,43 @@
-require("packer").startup(function(use)
-    use "wbthomason/packer.nvim"
-    use "nvim-lua/plenary.nvim"
-    use "nvim-telescope/telescope.nvim"
-    use "BurntSushi/ripgrep"
-    use "sharkdp/fd"
-    use "andweeb/presence.nvim"
-    use "nvim-treesitter/nvim-treesitter"
-    use "folke/tokyonight.nvim"
-    use { "catppuccin/nvim", as = "catppuccin" }
-    use "williamboman/mason.nvim"
-    use "williamboman/mason-lspconfig.nvim"
-    use "neovim/nvim-lspconfig"
-    use 'hrsh7th/cmp-nvim-lsp'
-    use 'hrsh7th/cmp-buffer'
-    use 'hrsh7th/cmp-path'
-    use 'hrsh7th/cmp-cmdline'
-    use 'hrsh7th/nvim-cmp'
-    use 'L3MON4D3/LuaSnip'
-    use 'saadparwaiz1/cmp_luasnip'
-    use 'folke/zen-mode.nvim'
-    use { 'VonHeikemen/lsp-zero.nvim',
-        branch = 'v2.x' }
-    use { "folke/neodev.nvim" , opts = {} }
-    use 'tpope/vim-fugitive'
-end)
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+
+if not vim.loop.fs_stat(lazypath) then
+  vim.fn.system({
+    "git",
+    "clone",
+    "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    "--branch=stable", -- latest stable release
+    lazypath,
+  })
+end
+vim.opt.rtp:prepend(lazypath)
+
+require("lazy").setup({
+    "folke/lazy.nvim",
+    "nvim-lua/plenary.nvim",
+    "nvim-telescope/telescope.nvim",
+    "BurntSushi/ripgrep",
+    "sharkdp/fd",
+    "andweeb/presence.nvim",
+    "nvim-treesitter/nvim-treesitter",
+    { "catppuccin/nvim", as = "catppuccin" },
+    "williamboman/mason.nvim",
+    "williamboman/mason-lspconfig.nvim",
+    "neovim/nvim-lspconfig",
+    'hrsh7th/cmp-nvim-lsp',
+    'hrsh7th/cmp-buffer',
+    'hrsh7th/cmp-path',
+    'hrsh7th/cmp-cmdline',
+    'hrsh7th/nvim-cmp',
+    'L3MON4D3/LuaSnip',
+    'saadparwaiz1/cmp_luasnip',
+    'folke/zen-mode.nvim',
+    { 'VonHeikemen/lsp-zero.nvim', branch = 'v2.x' },
+    { "folke/neodev.nvim" , opts = {} },
+    'tpope/vim-fugitive',
+
+
+},{})
 
 require("mason").setup({
 })
@@ -63,19 +77,6 @@ require("telescope").setup({
         },
     }
 })
-
---local tokyonight = require"tokyonight"
---
---tokyonight.setup({
---
---    transparent = true,
---    styles = {
---
---        variables = {  },
---        sidebars = "transparent",
---        floats = "transparent",
---    }
---})
 
 local catppuccin = require"catppuccin"
 
