@@ -2,8 +2,16 @@
 
 
 send() {
-    volume=$(pactl get-sink-volume @DEFAULT_SINK@ | awk '{print $5}' | sed "s/[^0-9]*//g")
-    dunstify -i none -r 6666 -u normal "Volume" "$volume%"
+    volume=$(pactl get-sink-volume @DEFAULT_SINK@ | awk '{ print $5 }' | sed "s/[^0-9]*//g")
+    muted=$(pactl get-sink-mute @DEFAULT_SINK@ | awk '{ print $2 }')
+
+    if [ "$muted" == "yes" ];  then
+        muted="Muted";
+    else 
+        muted="Unmuted";
+    fi
+
+    dunstify -i none -r 6666 -u normal " Audio" "Volume : $volume%\n $muted"
 }
 
 case $1 in
