@@ -77,29 +77,25 @@ vim.api.nvim_create_autocmd('LspAttach', {
 })
 
 
-local lspconf = require "lspconfig"
+local lspconf = require 'lspconfig'
 
-local lspz = require "lsp-zero"
+local lspz = require 'lsp-zero'
 
-lspz.preset("recommended")
+lspz.preset('recommended')
 
 lspz.set_preferences({ sign_icons = {}, })
 
 lspz.setup()
 
-local pid = vim.fn.getpid()
-local on_attach = function (client, buf)
-    vim.api.nvim_buf_attach(buf,client,{})
-end
-
-lspconf.intelephense.setup{ filetypes = { "php" }}
+lspconf.intelephense.setup { filetypes = { 'php' } }
 
 lspconf.clangd.setup({
-    cmd = { "clangd", "--header-insertion=never",
-    "--completion-style=detailed" , "--enable-config", "--function-arg-placeholders=0", "--cross-file-rename", "--background-index"},
+    cmd = { 'clangd', '--header-insertion=never',
+        '--completion-style=detailed', '--enable-config', '--function-arg-placeholders=0', '--cross-file-rename',
+        '--background-index' },
 })
 
-lspconf.lua_ls.setup{
+lspconf.lua_ls.setup {
     settings = {
         Lua = {
             workspace = {
@@ -111,51 +107,53 @@ lspconf.lua_ls.setup{
 
 
 vim.api.nvim_create_autocmd('FileType', {
-  pattern = 'sh',
-  callback = function()
-    vim.lsp.start({
-      name = 'bash-language-server',
-      cmd = { 'bash-language-server', 'start' },
-    })
-  end,
+    pattern = 'sh',
+    callback = function()
+        vim.lsp.start({
+            name = 'bash-language-server',
+            cmd = { 'bash-language-server', 'start' },
+        })
+    end,
 })
-
 
 lspconf.omnisharp.setup({
-    cmd = { "dotnet", "/home/luminous99/.local/share/nvim/mason/packages/omnisharp/libexec/OmniSharp.dll" };
+    cmd = { 'dotnet', vim.fn.expandcmd('~/.local/share/nvim/mason/packages/omnisharp/libexec/OmniSharp.dll') },
 
-     -- Enables support for reading code style, naming convention and analyzer
-     -- settings from .editorconfig.
-     enable_editorconfig_support = true,
- 
-     -- If true, MSBuild project system will only load projects for files that
-     -- were opened in the editor. This setting is useful for big C# codebases
-     -- and allows for faster initialization of code navigation features only
-     -- for projects that are relevant to code that is being edited. With this
-     -- setting enabled OmniSharp may load fewer projects and may thus display
-     -- incomplete reference lists for symbols.
-     enable_ms_build_load_projects_on_demand = false,
- 
-     -- Enables support for roslyn analyzers, code fixes and rulesets.
-     enable_roslyn_analyzers = false,
- 
-     -- Specifies whether 'using' directives should be grouped and sorted during
-     -- document formatting.
-     organize_imports_on_format = true,
- 
-     -- Enables support for showing unimported types and unimported extension
-     -- methods in completion lists. When committed, the appropriate using
-     -- directive will be added at the top of the current file. This option can
-     -- have a negative impact on initial completion responsiveness,
-     -- particularly for the first few completion sessions after opening a
-     -- solution.
-     enable_import_completion = true,
- 
-     -- Specifies whether to include preview versions of the .NET SDK when
-     -- determining which version to use for project loading.
-     sdk_include_prereleases = true,
- 
-     -- Only run analyzers against open files when 'enableRoslynAnalyzers' is
-     -- true
-     analyze_open_documents_only = false,
+    -- Enables support for reading code style, naming convention and analyzer
+    -- settings from .editorconfig.
+    enable_editorconfig_support = true,
+
+    -- If true, MSBuild project system will only load projects for files that
+    -- were opened in the editor. This setting is useful for big C# codebases
+    -- and allows for faster initialization of code navigation features only
+    -- for projects that are relevant to code that is being edited. With this
+    -- setting enabled OmniSharp may load fewer projects and may thus display
+    -- incomplete reference lists for symbols.
+    enable_ms_build_load_projects_on_demand = false,
+
+    -- Enables support for roslyn analyzers, code fixes and rulesets.
+    enable_roslyn_analyzers = false,
+
+    -- Specifies whether 'using' directives should be grouped and sorted during
+    -- document formatting.
+    organize_imports_on_format = true,
+
+    -- Enables support for showing unimported types and unimported extension
+    -- methods in completion lists. When committed, the appropriate using
+    -- directive will be added at the top of the current file. This option can
+    -- have a negative impact on initial completion responsiveness,
+    -- particularly for the first few completion sessions after opening a
+    -- solution.
+    enable_import_completion = true,
+
+    -- Specifies whether to include preview versions of the .NET SDK when
+    -- determining which version to use for project loading.
+    sdk_include_prereleases = true,
+
+    -- Only run analyzers against open files when 'enableRoslynAnalyzers' is
+    -- true
+    analyze_open_documents_only = false,
 })
+
+vim.api.nvim_command('au BufRead,BufNewFile *.xaml set filetype=xml')
+vim.api.nvim_command('au BufRead,BufNewFile *.axaml set filetype=xml')

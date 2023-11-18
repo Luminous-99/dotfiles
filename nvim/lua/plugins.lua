@@ -36,7 +36,6 @@ require("lazy").setup({
     { "folke/neodev.nvim" , opts = {} },
     'tpope/vim-fugitive',
 
-
 },{})
 
 require("mason").setup({
