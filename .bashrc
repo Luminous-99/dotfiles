@@ -143,6 +143,21 @@ upper_container="\[\e[0;32m\]{ $name \[\e[0;39m\]| $time \e[0;32m\]}"
 
 export PS1="$new_line \[\e[0;32m\]╭╴$upper_container ${debian_chroot:+($debian_chroot)} $new_line \[\e[0;32m\]╰╴($workspace\[\e[0;32m)\]\$ \[\e[0m\]"
 
-
 clear
 
+name=$(whoami)
+name_size=${#name}
+
+function pad_half() {
+    padding=""
+    max_pad=$(($1 / 2))
+    for ((i = 0;i < $max_pad;i++)) do 
+       padding="$padding " 
+    done
+
+    echo "$padding$2"
+}
+text_color="\e[$((0 + $RANDOM % 3));3$((1 + $RANDOM % 9))m"
+
+padded_emoticon=$(pad_half $name_size "( '-')")
+echo -e "\n\t$text_color Welcome, $name!\n\t$text_color$padded_emoticon\e[0;0m" 
