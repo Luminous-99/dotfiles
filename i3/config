@@ -180,7 +180,7 @@ bindsym $mod+r mode "resize"
 bar {
     
     position bottom 
-    padding 0px 10px 0px 10px 
+    padding 0px 5px 0px 5px 
     status_command i3status 
 
 }
