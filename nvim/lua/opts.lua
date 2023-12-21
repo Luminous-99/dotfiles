@@ -1,6 +1,7 @@
 local opt = vim.opt
 local map = vim.api.nvim_set_keymap
 
+opt.number = true
 opt.relativenumber = true
 opt.tabstop=4
 opt.shiftwidth=4
