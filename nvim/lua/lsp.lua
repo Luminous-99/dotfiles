@@ -87,8 +87,6 @@ lspz.set_preferences({ sign_icons = {}, })
 
 lspz.setup()
 
-lspconf.intelephense.setup { filetypes = { 'php' } }
-
 lspconf.clangd.setup({
     cmd = { 'clangd', '--header-insertion=never',
         '--completion-style=detailed', '--enable-config', '--function-arg-placeholders=0', '--cross-file-rename',
@@ -154,6 +152,12 @@ lspconf.omnisharp.setup({
     -- true
     analyze_open_documents_only = false,
 })
+
+lspconf.phpactor.setup( {
+    cmd = { 'phpactor', 'language-server' },
+    filetypes = { 'php' },
+
+} )
 
 vim.api.nvim_command('au BufRead,BufNewFile *.xaml set filetype=xml')
 vim.api.nvim_command('au BufRead,BufNewFile *.axaml set filetype=xml')
