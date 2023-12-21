@@ -131,19 +131,17 @@ export PATH=$PATH:$ANDROID_HOME/platform-tools
 
 
 #Bash Prompt
-
-name="\[\e[1;32m\]\u@\h"
-time="\[\e[1;36m\]\d \t"
-workspace="\[\e[1;36m\]\W"
-new_line="\[\n\]"
-upper_container="\[\e[0;32m\]{ $name \[\e[0;39m\]| $time \e[0;32m\]}"
-
 #original
 #PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\e[01;32m\]\u@\h\[\e[00m\]:\[\e[01;34m\]\w\[\e[00m\]\$"
 
-export PS1="$new_line \[\e[0;32m\]╭╴$upper_container ${debian_chroot:+($debian_chroot)} $new_line \[\e[0;32m\]╰╴($workspace\[\e[0;32m)\]\$ \[\e[0m\]"
+time="\[\e[1;36m\]\d \t"
+name="\[\e[1;33m\]\u@\h"
+workspace="\[\e[1;36m\]\w"
+new_line="\n"
+upper_container="$workspace"
 
-clear
+export PROMPT_DIRTRIM=3
+export PS1="$new_line $workspace ${debian_chroot:+($debian_chroot)}\[\e[0;36m\]λ \[\e[00m\]"
 
 name=$(whoami)
 name_size=${#name}
@@ -160,4 +158,4 @@ function pad_half() {
 text_color="\e[$((0 + $RANDOM % 3));3$((1 + $RANDOM % 9))m"
 
 padded_emoticon=$(pad_half $name_size "( '-')")
-echo -e "\n\t$text_color Welcome, $name!\n\t$text_color$padded_emoticon\e[0;0m" 
+echo -e "\n\t$text_color Welcome, $name!\n\t$text_color$padded_emoticon\e\n\e[0m" 
