@@ -192,7 +192,7 @@ for_window [floating] border pixel 2
 for_window [tiling]   border pixel 2
 title_align center
 
-gaps inner 10px
+gaps inner 5px
 gaps outer 5px
 
 # class                     border    backgr.   text      indicator child_border
@@ -201,7 +201,7 @@ client.unfocused            #000000   #000000   #a0a0f0
 
 hide_edge_borders smart
 smart_borders on
-smart_gaps on
+#smart_gaps on
 #focus_follows_mouse no
 #floating_minimum_size 400 x 200
 #floating_maximum_size 900 x 450
