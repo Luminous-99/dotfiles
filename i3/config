@@ -201,8 +201,8 @@ client.unfocused            #000000   #000000   #a0a0f0
 
 hide_edge_borders smart
 smart_borders on
+focus_follows_mouse no
 #smart_gaps on
-#focus_follows_mouse no
 #floating_minimum_size 400 x 200
 #floating_maximum_size 900 x 450
 
