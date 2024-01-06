@@ -127,6 +127,7 @@ export NVM_DIR="$HOME/.nvm"
 export ANDROID_HOME=$HOME/Android/Sdk
 export PATH=$PATH:$ANDROID_HOME/emulator
 export PATH=$PATH:$ANDROID_HOME/platform-tools
+export PATH=$PATH:$HOME/Downloads/flutter/bin
 
 
 
@@ -142,6 +143,8 @@ upper_container="$workspace"
 
 export PROMPT_DIRTRIM=3
 export PS1="$new_line $workspace ${debian_chroot:+($debian_chroot)}\[\e[0;36m\]λ \[\e[00m\]"
+export VISUAL=nvim
+export EDITOR=nvim
 
 name=$(whoami)
 name_size=${#name}
