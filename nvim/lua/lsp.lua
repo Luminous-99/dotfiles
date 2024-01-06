@@ -1,56 +1,24 @@
-local cmp = require 'cmp'
-
-cmp.setup({
-    snippet = {
-        expand = function(args)
-            require('luasnip').lsp_expand(args.body)
-        end,
-    },
-    window = {
-    },
-    mapping = cmp.mapping.preset.insert({
-        ['<C-b>'] = cmp.mapping.scroll_docs(-4),
-        ['<C-f>'] = cmp.mapping.scroll_docs(4),
-        ['<C-Space>'] = cmp.mapping.complete(),
-        ['<C-e>'] = cmp.mapping.abort(),
-        ['<TAB>'] = cmp.mapping.confirm({ select = true }),
-    }),
-    sources = cmp.config.sources({
-            { name = 'nvim_lsp' },
-            { name = 'luasnip' },
-
-        },
-        {
-
-            { name = 'buffer' },
-        })
-})
-
-cmp.setup.filetype('gitcommit', {
-    sources = cmp.config.sources({
-        { name = 'git' },
-    }, {
-        { name = 'buffer' },
-    })
-})
-
-cmp.setup.cmdline({ '/', '?' }, {
-    mapping = cmp.mapping.preset.cmdline(),
-    sources = {
-        { name = 'buffer' }
-    }
-})
-
-cmp.setup.cmdline(':', {
-    mapping = cmp.mapping.preset.cmdline(),
-    sources = cmp.config.sources({
-        { name = 'path' }
-    }, {
-        { name = 'cmdline' }
-    })
-})
+require "cmpconf"
 
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
+
+vim.api.nvim_set_hl(0,'FloatBorder',{ fg = vim.api.nvim_get_hl(0,{ name = "Function" }).fg, })
+
+local border = {
+      {"╭", "FloatBorder"},
+      {"─", "FloatBorder"},
+      {"╮", "FloatBorder"},
+      {"│", "FloatBorder"},
+      {"╯", "FloatBorder"},
+      {"─", "FloatBorder"},
+      {"╰", "FloatBorder"},
+      {"│", "FloatBorder"},
+}
+
+local handlers = {
+  ["textDocument/hover"] =  vim.lsp.with(vim.lsp.handlers.hover, {border = border}),
+  ["textDocument/signatureHelp"] =  vim.lsp.with(vim.lsp.handlers.signature_help, {border = border }),
+}
 
 vim.api.nvim_create_autocmd('LspAttach', {
     group = vim.api.nvim_create_augroup('UserLspConfig', {}),
@@ -70,37 +38,35 @@ vim.api.nvim_create_autocmd('LspAttach', {
         vim.keymap.set('n', '<space>rn', vim.lsp.buf.rename, opts)
         vim.keymap.set({ 'n', 'v' }, '<space>ca', vim.lsp.buf.code_action, opts)
         vim.keymap.set('n', 'gr', vim.lsp.buf.references, opts)
-        vim.keymap.set('n', '<space>f', function()
+        vim.keymap.set('n', '<space>rf', function()
             vim.lsp.buf.format { async = true, }
         end, opts)
     end,
 })
 
+local lsp_config = require 'lspconfig'
 
-local lspconf = require 'lspconfig'
-
-local lspz = require 'lsp-zero'
-
-lspz.preset('recommended')
-
-lspz.set_preferences({ sign_icons = {}, })
-
-lspz.setup()
-
-lspconf.clangd.setup({
-    cmd = { 'clangd', '--header-insertion=never',
-        '--completion-style=detailed', '--enable-config', '--function-arg-placeholders=0', '--cross-file-rename',
-        '--background-index' },
+lsp_config.clangd.setup({
+    cmd = { 'clangd',
+        '--header-insertion=never',
+        '--completion-style=detailed',
+        '--enable-config',
+        '--function-arg-placeholders=0',
+        '--cross-file-rename',
+        '--background-index'
+    },
+    handlers = handlers,
 })
 
-lspconf.lua_ls.setup {
+lsp_config.lua_ls.setup {
     settings = {
         Lua = {
             workspace = {
                 checkThirdParty = false
             }
         }
-    }
+    },
+    handlers = handlers,
 }
 
 
@@ -109,12 +75,12 @@ vim.api.nvim_create_autocmd('FileType', {
     callback = function()
         vim.lsp.start({
             name = 'bash-language-server',
-            cmd = { 'bash-language-server', 'start' },
+            cmd  = { 'bash-language-server', 'start' },
         })
     end,
 })
 
-lspconf.omnisharp.setup({
+lsp_config.omnisharp.setup({
     cmd = { 'dotnet', vim.fn.expandcmd('~/.local/share/nvim/mason/packages/omnisharp/libexec/OmniSharp.dll') },
 
     -- Enables support for reading code style, naming convention and analyzer
@@ -151,13 +117,15 @@ lspconf.omnisharp.setup({
     -- Only run analyzers against open files when 'enableRoslynAnalyzers' is
     -- true
     analyze_open_documents_only = false,
+    handlers = handlers,
 })
 
-lspconf.phpactor.setup( {
+lsp_config.phpactor.setup({
     cmd = { 'phpactor', 'language-server' },
     filetypes = { 'php' },
+    handlers = handlers,
 
-} )
+})
 
 vim.api.nvim_command('au BufRead,BufNewFile *.xaml set filetype=xml')
 vim.api.nvim_command('au BufRead,BufNewFile *.axaml set filetype=xml')
