@@ -14,7 +14,7 @@ set $down j
 set $up k
 set $right l
 # Your preferred terminal emulator
-set $term gnome-terminal 
+set $term kitty
 # Your preferred application launcher
 # Note: pass the final command to swaymsg so that the resulting window can be opened
 # on the original workspace that the command was run on.
@@ -209,19 +209,20 @@ bindsym $mod+r mode "resize"
 #
 # Read `man 5 sway-bar` for more information about this section.
 bar {
-       position top
-        mode hide
-        hidden_state hide
+       position bottom
+        mode dock
+        hidden_state show
         modifier $mod+alt
+        gaps 5px
 # When the status_command prints a new line to stdout, swaybar updates.
 # The default just shows the current date and time.
         #status_command while ~/.config/sway/swaybar.sh; do sleep 1; done
-        status_command i3status
+        status_command waybar
 
         colors {
             statusline #ffffff
                 background #323232
-                inactive_workspace #32323200 #32323200 #5c5c5c
+                inactive_workspace #323232 #323232 #5c5c5c
         }
 }
 
@@ -234,15 +235,42 @@ bar {
 #
 #}
 
-bindsym XF86AudioMute         exec pactl set-sink-mute @DEFAULT_SINK@ toggle
-bindsym XF86AudioRaiseVolume  exec pactl set-sink-volume @DEFAULT_SINK@ +5%
-bindsym XF86AudioLowerVolume  exec pactl set-sink-volume @DEFAULT_SINK@ -5%
-gaps inner 10
+bindsym XF86AudioRaiseVolume exec --no-startup-id ~/dotfiles/i3/volumenotify.sh Up && $refresh_i3status
+bindsym XF86AudioLowerVolume exec --no-startup-id ~/dotfiles/i3/volumenotify.sh Down && $refresh_i3status
+bindsym XF86AudioMute exec --no-startup-id        ~/dotfiles/i3/volumenotify.sh Mute  && $refresh_i3status
+bindsym XF86AudioMicMute exec --no-startup-id     pactl set-source-mute @DEFAULT_SOURCE@ toggle && $refresh_i3status
+
+bindsym XF86MonBrightnessUp exec --no-startup-id ~/dotfiles/i3/brightnessnotify.sh Up
+bindsym XF86MonBrightnessDown exec --no-startup-id ~/dotfiles/i3/brightnessnotify.sh Down
+
+for_window [floating] border pixel 2
+for_window [tiling]   border pixel 2
+title_align center
+
+bindsym $mod+shift+u  exec --no-startup-id setxkbmap -layout us
+bindsym $mod+shift+t  exec --no-startup-id setxkbmap -layout tr
+bindsym $mod+t  exec --no-startup-id polybar-msg cmd toggle
+bindsym $mod+shift+f  exec --no-startup-id flameshot gui
+bindsym $mod+shift+n  exec --no-startup-id rofi -show drun
+bindsym Mod1+space  exec --no-startup-id dunstctl close 
+bindsym Control+Mod1+space  exec --no-startup-id dunstctl close-all
+
+gaps inner 5px
+gaps outer 5px
+
+# class                     border    backgr.   text      indicator child_border
+client.focused              #a0a0f0   #a0a0f0   #000000   #a0a0f0
+client.unfocused            #000000   #000000   #a0a0f0
+
+hide_edge_borders smart
+smart_borders on
+focus_follows_mouse no
+#smart_gaps on
 
 set $gnome-schema org.gnome.desktop.interface
 
-exec_always {
-    gsettings set $gnome-schema cursor-theme 'Bibata-Modern-Classic'
-}
-
 include /etc/sway/config.d/*
+exec --no-startup-id ~/dotfiles/i3/.fehbg &
+exec --no-startup-id dunst -conf ~/dotfiles/dunst/dunstrc &
+exec --no-startup-id vivaldi 
+exec --no-startup-id kitty 
