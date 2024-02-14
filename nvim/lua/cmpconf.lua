@@ -1,32 +1,78 @@
 local cmp = require 'cmp'
 
-local icons = {
-    ["Function"]  = "󰊕",
-    ["Class"]     = "",
-    ["Interface"] = "",
-    ["Struct"]    = "",
-    ["Field"]     = "",
-    ["Variable"]  = "",
-    ["Enum"]      = "",
-    ["EnumMember"]= "",
-    ["Keyword"]   = "",
-    ["Snippet"]   = "",
-    ["Text"]      = "󰦨",
+local symbols = {
+    ["Function"]   = "󰊕  ",
+    ["Method"]     = "  ",
+    ["Class"]      = "  ",
+    ["Interface"]  = "  ",
+    ["Struct"]     = "  ",
+    ["Field"]      = "  ",
+    ["Property"]   = "  ",
+    ["Variable"]   = "  ",
+    ["Value"]      = "  ",
+    ["Constant"]   = "  ",
+    ["Enum"]       = "  ",
+    ["EnumMember"] = "  ",
+    ["Keyword"]    = "  ",
+    ["Event"]      = "  ",
+    ["Snippet"]    = "  ",
+    ["Text"]       = "󰦨  ",
+    ["File"]       = "  ",
+    ["Folder"]     = "  ",
 }
+
+---@param str string
+---@return string
+---@nodiscard
+function trim_left(str)
+    for i = 1, str:len(), 1 do
+        if str[i] ~= " " then
+            return string.sub(str, i, str:len())
+        end
+    end
+    return str
+end
+
+---@param fn string
+---@return string
+local remove_params = function(fn)
+    for i = 1, fn:len(), 1 do
+        if string.sub(fn, i, i) == "(" then
+            return string.sub(fn, 0, i - 1)
+        end
+    end
+    return fn
+end
+
+---@param fn string
+---@return string
+local remove_template = function(fn)
+    for i = 1, fn:len(), 1 do
+        if string.sub(fn, i, i) == "<" then
+            return string.sub(fn, 0, i - 1)
+        end
+    end
+    return fn
+end
+
 
 cmp.setup({
     formatting = {
-       expandable_indicator = true,
-       fields = { 'abbr','kind', },
-       format = function (entry, vim_item)
-
-            if vim_item.kind == "Function" then
-                vim_item.abbr = vim_item.word
+        expandable_indicator = false,
+        fields = {  'kind','abbr', 'menu', },
+        format = function(_, vim_item)
+            if vim_item.kind == "Function" or vim_item.kind == "Method" then
+                vim_item.abbr = trim_left(remove_params(vim_item.abbr))
+            elseif vim_item.kind == "Class" then
+                vim_item.abbr = trim_left(remove_template(vim_item.abbr))
+            else
+                vim_item.abbr = trim_left(vim_item.abbr)
             end
-
-            vim_item.kind = icons[vim_item.kind]
+            if symbols[vim_item.kind] ~= nil then
+                vim_item.kind = symbols[vim_item.kind]
+            end
             return vim_item;
-       end,
+        end,
 
     },
     snippet = {
@@ -46,13 +92,15 @@ cmp.setup({
         ['<C-e>'] = cmp.mapping.abort(),
         ['<TAB>'] = cmp.mapping.confirm({ select = true }),
     }),
-    sources = cmp.config.sources({
+    sources = cmp.config.sources(
+        {
             { name = 'nvim_lsp' },
             { name = 'luasnip' },
         },
         {
             { name = 'buffer' },
-        })
+        }
+    )
 })
 
 cmp.setup.filetype('gitcommit', {
@@ -78,4 +126,3 @@ cmp.setup.cmdline(':', {
         { name = 'cmdline' }
     })
 })
-

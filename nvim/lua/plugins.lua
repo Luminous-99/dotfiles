@@ -14,6 +14,7 @@ vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
     lazy = true,
+ --   { 'VonHeikemen/lsp-zero.nvim', branch = 'v2.x' },
     "j-hui/fidget.nvim",
     "folke/lazy.nvim",
     { "folke/neodev.nvim", opts = {  } },
@@ -53,6 +54,8 @@ require("mason").setup({
 require("mason-lspconfig").setup({
     ensure_installed = { "lua_ls", "rust_analyzer", "clangd", "bashls", "cmake", "pyright" },
 })
+
+require('luasnip.loaders.from_vscode').lazy_load()
 
 
 require("presence").setup({
@@ -111,5 +114,4 @@ require("zen-mode").setup({
 })
 
 require "fidget".setup({
-
 })

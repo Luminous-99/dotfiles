@@ -1,23 +1,24 @@
 require "cmpconf"
 
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
+capabilities.textDocument.completion.completionItem.snippetSupport = true;
 
-vim.api.nvim_set_hl(0,'FloatBorder',{ fg = vim.api.nvim_get_hl(0,{ name = "Function" }).fg, })
+vim.api.nvim_set_hl(0, 'FloatBorder', { fg = vim.api.nvim_get_hl(0, { name = "Function" }).fg, })
 
 local border = {
-      {"╭", "FloatBorder"},
-      {"─", "FloatBorder"},
-      {"╮", "FloatBorder"},
-      {"│", "FloatBorder"},
-      {"╯", "FloatBorder"},
-      {"─", "FloatBorder"},
-      {"╰", "FloatBorder"},
-      {"│", "FloatBorder"},
+    { "╭", "FloatBorder" },
+    { "─", "FloatBorder" },
+    { "╮", "FloatBorder" },
+    { "│", "FloatBorder" },
+    { "╯", "FloatBorder" },
+    { "─", "FloatBorder" },
+    { "╰", "FloatBorder" },
+    { "│", "FloatBorder" },
 }
 
 local handlers = {
-  ["textDocument/hover"] =  vim.lsp.with(vim.lsp.handlers.hover, {border = border}),
-  ["textDocument/signatureHelp"] =  vim.lsp.with(vim.lsp.handlers.signature_help, {border = border }),
+    ["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = border }),
+    ["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = border }),
 }
 
 vim.api.nvim_create_autocmd('LspAttach', {
@@ -29,6 +30,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
         vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
         vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, opts)
         vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
+        vim.keymap.set('i', '<C-k>', vim.lsp.buf.signature_help, opts)
         vim.keymap.set('n', '<space>wa', vim.lsp.buf.add_workspace_folder, opts)
         vim.keymap.set('n', '<space>wr', vim.lsp.buf.remove_workspace_folder, opts)
         vim.keymap.set('n', '<space>wl', function()
@@ -45,6 +47,15 @@ vim.api.nvim_create_autocmd('LspAttach', {
 })
 
 local lsp_config = require 'lspconfig'
+
+--local lspz = require 'lsp-zero'
+--
+--lspz.preset('recommended')
+--
+--lspz.set_preferences({ sign_icons = {}, })
+--
+--lspz.setup()
+
 
 lsp_config.clangd.setup({
     cmd = { 'clangd',
@@ -67,6 +78,7 @@ lsp_config.lua_ls.setup {
         }
     },
     handlers = handlers,
+    capabilities = capabilities,
 }
 
 
@@ -117,6 +129,7 @@ lsp_config.omnisharp.setup({
     -- Only run analyzers against open files when 'enableRoslynAnalyzers' is
     -- true
     analyze_open_documents_only = false,
+    capabilities = capabilities,
     handlers = handlers,
 })
 
@@ -124,7 +137,64 @@ lsp_config.phpactor.setup({
     cmd = { 'phpactor', 'language-server' },
     filetypes = { 'php' },
     handlers = handlers,
+    capabilities = capabilities,
+})
 
+lsp_config.erlangls.setup({
+    handlers = handlers,
+    capabilities = capabilities,
+})
+
+lsp_config.clojure_lsp.setup({
+    handlers = handlers,
+    capabilities = capabilities,
+})
+
+lsp_config.html.setup({
+    filetypes = { 'html', 'vue', 'twig' },
+    handlers = {
+        ["textDocument/hover"] = handlers["textDocument/hover"],
+        ["textDocument/signaturehelp"] = handlers["textDocument/signaturehelp"],
+        ["textDocument/rename"] = function() print("html renaming is disabled") end,
+    },
+    capabilities = capabilities,
+    init_options = {
+        embeddedLanguages = {
+            css = true,
+            javascript = true,
+            php = true,
+        }
+    }
+})
+
+lsp_config.emmet_ls.setup({
+    filetypes = { 'html', 'vue', 'twig' },
+    handlers = {
+        ["textDocument/hover"] = handlers["textDocument/hover"],
+        ["textDocument/signaturehelp"] = handlers["textDocument/signaturehelp"],
+        ["textDocument/rename"] = function() print("emmet_ls renaming is disabled") end,
+    },
+    capabilities = capabilities,
+})
+
+lsp_config.volar.setup({
+    handlers = handlers,
+    capabilities = capabilities,
+})
+
+lsp_config.tsserver.setup({
+    handlers = handlers,
+    capabilities = capabilities,
+})
+
+lsp_config.cssls.setup({
+    filetypes = { 'html', 'scss', 'css' },
+    handlers = {
+        ["textDocument/hover"] = handlers["textDocument/hover"],
+        ["textDocument/signatureHelp"] = handlers["textDocument/signatureHelp"],
+        ["textDocument/rename"] = function() print("cssls renaming is disabled") end,
+    },
+    capabilities = capabilities,
 })
 
 vim.api.nvim_command('au BufRead,BufNewFile *.xaml set filetype=xml')
