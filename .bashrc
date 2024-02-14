@@ -146,6 +146,14 @@ export PS1="$new_line $workspace ${debian_chroot:+($debian_chroot)}\[\e[0;36m\]Î
 export VISUAL=nvim
 export EDITOR=nvim
 
+function mkcd() { 
+    if [ -z "$1" ]; then
+        echo "Error: input is empty"
+        return 1
+    fi
+    mkdir "$1" && cd "$1"
+}
+
 name=$(whoami)
 name_size=${#name}
 
@@ -162,3 +170,5 @@ text_color="\e[$((0 + $RANDOM % 3));3$((1 + $RANDOM % 9))m"
 
 padded_emoticon=$(pad_half $name_size "( '-')")
 echo -e "\n\t$text_color Welcome, $name!\n\t$text_color$padded_emoticon\e\n\e[0m" 
+. "$HOME/.cargo/env"
+
