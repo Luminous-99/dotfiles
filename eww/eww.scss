@@ -1,0 +1,133 @@
+//Global Styles
+.bar {
+    all: unset;
+    background-color: #3a3a3a;
+    color: #b0b4bc;
+}
+
+.menu {
+    all: unset;
+    background-color: #3a3a3a;
+    color: #b0b4bc;
+    border-radius: 15%;
+}
+
+.music {
+    font: 12px "Cascadia Code";
+    font-size: 1.2rem;
+}
+
+// Styles on classes (see eww.yuck for more information)
+
+.sidestuff slider {
+    all: unset;
+    color: #ffd5cd;
+    border-radius: 0.0rem;
+    min-height: 0.7rem;
+}
+
+.sidestuff {
+    all: unset;
+    color: #ffd5cd;
+    border-radius: 0.0rem;
+}
+
+
+.metric scale trough highlight {
+    all: unset;
+    background-color: #D35D6E;
+    color: #000000;
+    border-radius: 10px;
+}
+
+.metric scale trough {
+    all: unset;
+    background-color: #4e4e4e;
+    border-radius: 50px;
+    min-height: 3px;
+    min-width: 50px;
+    margin-left: 10px;
+    margin-right: 20px;
+}
+
+.metric scale trough highlight {
+    all: unset;
+    background-color: #d35d6e;
+    color: #000000;
+    border-radius: 10px;
+}
+
+.metric scale trough {
+    all: unset;
+    background-color: #4e4e4e;
+    border-radius: 50px;
+    min-height: 3px;
+    min-width: 50px;
+    margin-left: 10px;
+    margin-right: 20px;
+}
+
+.label-ram {
+    font-size: large;
+}
+
+.workspace-button {
+    all: unset;
+    font: 12px "Cascadia Code";
+    font-size: 1.2rem;
+    border: 0;
+    border-radius: 0;
+    transition: all 0.3s ease-in-out;
+}
+
+.date-time {
+    font: 12px "Cascadia Code";
+    font-size: 1.2rem;
+    margin-right: 1rem;
+    border-radius: 0px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    background-color: #4a4a4a;
+}
+
+.label {
+    font: 12px "Cascadia Code";
+    font-size: 2rem;
+}
+
+.icon-button {
+    all: unset;
+    font: 12px "Cascadia Code";
+    font-size: 2rem;
+    border: 0;
+    border-radius: 0;
+}
+
+.player-button {
+    all: unset;
+    font: 12px "Cascadia Code";
+    font-size: 1.5rem;
+    border: 0;
+    border-radius: 0;
+    margin-left: 1rem;
+    margin-right: 1rem;
+}
+
+.shutdown {
+    color: #ffb5ad;
+}
+
+.restart {
+    color: #a6e3a2;
+}
+
+.track-controller {
+    all: unset;
+    font: 12px "Cascadia Code";
+    font-size: 2.0rem;
+    border: 0;
+    border-radius: 0;
+    margin-left: 1rem;
+    margin-right: 1rem;
+
+}
