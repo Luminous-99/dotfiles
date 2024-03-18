@@ -34,26 +34,27 @@ configuration {
     lightbg:                     rgba ( 238, 232, 213, 100 % );
     background-color:            transparent;
     border-color:                rgba( 0,0,0,0%);
-    normal-background:           rgba ( 58, 58, 58, 100 % );
+    normal-background:           rgba ( 58, 58, 58, 100% );
     bordercolor:                 rgba( 0,0,0,0%);
-    alternate-active-background: rgba ( 39, 50, 56, 100 % );
+    alternate-active-background: rgba ( 58, 58, 58, 100 % );
     active-foreground:           rgba ( 128, 203, 196, 100 % );
     blue:                        rgba ( 38, 139, 210, 100 % );
     alternate-normal-foreground: var(foreground);
     urgent-background:           rgba ( 39, 50, 56, 100 % );
     selected-normal-foreground:  White;
     selected-active-background:  rgba ( 57, 66, 73, 100 % );
-    background:                  rgba ( 58, 58, 58, 100 % );
-    selected-urgent-background:  rgba ( 57, 66, 73, 100 % );
-    active-background:           rgba ( 39, 50, 56, 100 % );
+    background:                  rgba ( 58, 58, 58, 100% );
+    selected-urgent-background:  rgba ( 57, 66, 73, 100% );
+    active-background:           rgba ( 58, 58, 58, 100% );
     alternate-active-foreground: var(active-foreground);
-    alternate-normal-background: rgba ( 58, 58, 58, 100 % );
-    foreground:                  rgba ( 193, 193, 193, 100 % );
+    alternate-normal-background: rgba ( 58, 58, 58, 100% );
+    foreground:                  rgba ( 193, 193, 193, 100% );
     alternate-urgent-foreground: var(urgent-foreground);
     selected-urgent-foreground:  rgba ( 255, 24, 68, 100 % );
     spacing:                     2;
     normal-foreground:           var(foreground);
-    selected-normal-background:  rgba ( 57, 66, 73, 100 % );
+    selected-normal-background:  rgba ( 58, 58, 58, 100 % );
+    border-radius: 0px;
 }
 window {
     padding:          5;
@@ -84,10 +85,13 @@ listview {
 element {
     padding: 1px ;
     border:  0;
+    background-color: var(normal-background);
 }
 element-text {
     vertical-align: 0.5;
     size: 1.5em;
+    background-color: var(normal-background);
+    padding: 10px;
 }
 element-icon {
     size: 2.5em;
@@ -127,10 +131,6 @@ element alternate.urgent {
 element alternate.active {
     background-color: var(alternate-active-background);
     text-color:       var(alternate-active-foreground);
-}
-element-text {
-    background-color: inherit;
-    text-color:       inherit;
 }
 scrollbar {
     width:        4px ;
