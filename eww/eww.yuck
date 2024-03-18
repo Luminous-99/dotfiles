@@ -26,36 +26,46 @@
             :onchange "amixer -D pulse sset Master {}%")
     (metric :label "󰛨"
             :value brightness
-            :onchange "amixer -D pulse sset Master {}%")
+            :onchange "xbacklight -set {}%")
     (metric :label "󱛟"
             :value {round((1 - (EWW_DISK["/"].free / EWW_DISK["/"].total)) * 100, 0)}
             :onchange "")
     (battery  :capacity { EWW_BATTERY.BAT0.capacity })
     (label :class "date-time" :text time)
-     (button :class "icon-button" :style "margin-right: 1rem;" :onclick "./menu.sh" menu_icon )))
+    (button :class "icon-button" :style "margin-right: 1rem;" :onclick "./menu.sh" menu_icon )))
 
+(defvar wbutton1 "workspace-button")
+(defvar wbutton2 "workspace-button")
+(defvar wbutton3 "workspace-button")
+(defvar wbutton4 "workspace-button")
+(defvar wbutton5 "workspace-button")
+(defvar wbutton6 "workspace-button")
+(defvar wbutton7 "workspace-button")
+(defvar wbutton8 "workspace-button")
+(defvar wbutton9 "workspace-button")
 (defwidget workspaces []
   (box :class "workspaces"
        :orientation "h"
        :space-evenly true
        :halign "start"
-       :spacing 5
-    (label :class "label" :text " " :style "margin-left: 1rem;")
-    (button :class "workspace-button" :onclick "wmctrl -s 0"  1)
-    (button :class "workspace-button" :onclick "wmctrl -s 1"  2)
-    (button :class "workspace-button" :onclick "wmctrl -s 2"  3)
-    (button :class "workspace-button" :onclick "wmctrl -s 3"  4)
-    (button :class "workspace-button" :onclick "wmctrl -s 4"  5)
-    (button :class "workspace-button" :onclick "wmctrl -s 5"  6)
-    (button :class "workspace-button" :onclick "wmctrl -s 6"  7)
-    (button :class "workspace-button" :onclick "wmctrl -s 7"  8)
-    (button :class "workspace-button" :onclick "wmctrl -s 8"  9)))
+       :spacing 0
+    (button :class wbutton1 :onclick "i3-msg workspace number 1 && ./toggle_wbutton.sh 1"  1)
+    (button :class wbutton2 :onclick "i3-msg workspace number 2 && ./toggle_wbutton.sh 2"  2)
+    (button :class wbutton3 :onclick "i3-msg workspace number 3 && ./toggle_wbutton.sh 3"  3)
+    (button :class wbutton4 :onclick "i3-msg workspace number 4 && ./toggle_wbutton.sh 4"  4)
+    (button :class wbutton5 :onclick "i3-msg workspace number 5 && ./toggle_wbutton.sh 5"  5)
+    (button :class wbutton6 :onclick "i3-msg workspace number 6 && ./toggle_wbutton.sh 6"  6)
+    (button :class wbutton7 :onclick "i3-msg workspace number 7 && ./toggle_wbutton.sh 7"  7)
+    (button :class wbutton8 :onclick "i3-msg workspace number 8 && ./toggle_wbutton.sh 8"  8)
+    (button :class wbutton9 :onclick "i3-msg workspace number 9 && ./toggle_wbutton.sh 9"  9)
+    (label  :class "workspace-icon" :text " ")
+    ))
 
 (defwidget battery [capacity]
   (box :orientation "h"
        :space-evenly false
        :halign "center"
-    (label  :class "label" :text { EWW_BATTERY.BAT0.status == "Charging" ? "󰂄 " : EWW_BATTERY.BAT0.capacity <= 20 ? "󰂃 " : "󰁹 " } :style { EWW_BATTERY.BAT0.capacity <= 20 ? "color: #ff6f6f;" : "color: #a6e3a2;" })
+    (label  :class "label" :text { EWW_BATTERY.BAT0.status == "Charging" ? "󰂄 " : EWW_BATTERY.BAT0.capacity < 20 ? "󱃌 " : "󰁹 " } :style { EWW_BATTERY.BAT0.capacity <= 20 ? "color: #ff6f6f;" : "color: #a6e3a2;" })
     (label :class "label" :text "${capacity}% " :style { EWW_BATTERY.BAT0.capacity <= 20 ? "color: #ff6f6f;font-size: 1.2rem;" : "color: #a6e3a2;font-size: 1.2rem;" })))
 
 (defwidget music []
@@ -64,10 +74,10 @@
        :space-evenly false
        :halign "center"
     (label :class "label" :text "󰎆 ") 
-    (label :text {music != "" ? "${music}" : ""})
-    (button :class "track-controller" :onclick "playerctl previous" previous_icon) 
-    (button :class "track-controller" :onclick "playerctl next" next_icon) 
-    (button :class "player-button" :onclick "./player_click.sh" player_icon) 
+    (label :text music :visible {music != "" ? true : false})
+    (button :class "track-controller" :onclick "playerctl previous" :visible { music != "" ? true : false } previous_icon) 
+    (button :class "track-controller" :onclick "playerctl next" :visible { music != "" ? true : false } next_icon) 
+    (button :class "player-button" :onclick "./player_click.sh" :visible { music != "" ? true : false }  player_icon) 
     ))
 
 (defwidget metric [label value onchange]
@@ -82,7 +92,7 @@
            :onchange onchange)))
 
 (deflisten music :initial ""
-  "playerctl --player='spotify' --follow metadata --format '{{ artist }} - {{ trunc(title, 28) }}' || true")
+  "playerctl --player='mpv,vlc,spotify' --follow metadata --format '{{ artist }} - {{ trunc(title, 28) }}' || true")
 
 (defpoll volume :interval "1s"
   "scripts/getvol")

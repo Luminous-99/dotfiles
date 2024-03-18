@@ -1,9 +1,11 @@
-//Global Styles
+$background: #4a4a4a;
+
 .bar {
     all: unset;
-    background-color: #3a3a3a;
+    background-color: rgba(58, 58 , 58, 0.0);
     color: #b0b4bc;
 }
+
 
 .menu {
     all: unset;
@@ -15,9 +17,10 @@
 .music {
     font: 12px "Cascadia Code";
     font-size: 1.2rem;
+    border-radius: 19px;
+    margin-right: 1rem;
+    background-color: #3e3e3e;
 }
-
-// Styles on classes (see eww.yuck for more information)
 
 .sidestuff slider {
     all: unset;
@@ -30,6 +33,10 @@
     all: unset;
     color: #ffd5cd;
     border-radius: 0.0rem;
+    border-radius: 19px;
+    background-color: #3e3e3e;
+    padding-left: 1rem;
+    margin-right: 1rem;
 }
 
 
@@ -43,24 +50,7 @@
 .metric scale trough {
     all: unset;
     background-color: #4e4e4e;
-    border-radius: 50px;
-    min-height: 3px;
-    min-width: 50px;
-    margin-left: 10px;
-    margin-right: 20px;
-}
-
-.metric scale trough highlight {
-    all: unset;
-    background-color: #d35d6e;
-    color: #000000;
     border-radius: 10px;
-}
-
-.metric scale trough {
-    all: unset;
-    background-color: #4e4e4e;
-    border-radius: 50px;
     min-height: 3px;
     min-width: 50px;
     margin-left: 10px;
@@ -71,28 +61,58 @@
     font-size: large;
 }
 
-.workspace-button {
+.workspaces {
+    all: unset;
+    border-radius: 19px;
+    background-color: #3e3e3e;
+    margin-left: 1rem;
+    margin-top: 0.2rem;
+    margin-bottom: 0.2rem;
+    padding: 0.15rem;
+}
+
+
+.workspace-button, .workspace-icon, .active-workspace-button {
     all: unset;
     font: 12px "Cascadia Code";
     font-size: 1.2rem;
+    margin-left: 0.5rem;
     border: 0;
     border-radius: 0;
+    border-radius: 5px;
     transition: all 0.3s ease-in-out;
 }
+
+.workspace-icon {
+    font-size: 2rem;
+}
+
+.workspace-button:hover, .workspace-icon:hover {
+    border: 2px  solid;
+    border-radius: 19px;
+}
+
+.active-workspace-button {
+    border: 2px  solid;
+    border-radius: 19px;
+}
+
 
 .date-time {
     font: 12px "Cascadia Code";
     font-size: 1.2rem;
     margin-right: 1rem;
-    border-radius: 0px;
+    margin-top: 5px;
+    margin-bottom: 5px;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
-    background-color: #4a4a4a;
 }
 
 .label {
+    all: unset;
     font: 12px "Cascadia Code";
     font-size: 2rem;
+    margin-left: 0.5rem;
 }
 
 .icon-button {
@@ -101,6 +121,8 @@
     font-size: 2rem;
     border: 0;
     border-radius: 0;
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
 }
 
 .player-button {
