@@ -69,6 +69,21 @@ lsp_config.clangd.setup({
     handlers = handlers,
 })
 
+lsp_config.ruby_ls.setup({
+    handlers = handlers,
+    capabilities = capabilities,
+})
+
+lsp_config.elixirls.setup({
+    handlers = handlers,
+    capabilities = capabilities,
+})
+
+lsp_config.gopls.setup({
+    handlers = handlers,
+    capabilities = capabilities,
+})
+
 lsp_config.lua_ls.setup {
     settings = {
         Lua = {
@@ -80,7 +95,6 @@ lsp_config.lua_ls.setup {
     handlers = handlers,
     capabilities = capabilities,
 }
-
 
 vim.api.nvim_create_autocmd('FileType', {
     pattern = 'sh',
@@ -151,7 +165,7 @@ lsp_config.clojure_lsp.setup({
 })
 
 lsp_config.html.setup({
-    filetypes = { 'html', 'vue', 'twig' },
+    filetypes = { 'php','html', 'vue', 'twig' },
     handlers = {
         ["textDocument/hover"] = handlers["textDocument/hover"],
         ["textDocument/signaturehelp"] = handlers["textDocument/signaturehelp"],
@@ -168,7 +182,7 @@ lsp_config.html.setup({
 })
 
 lsp_config.emmet_ls.setup({
-    filetypes = { 'html', 'vue', 'twig' },
+    filetypes = { 'php','html', 'vue', 'twig' },
     handlers = {
         ["textDocument/hover"] = handlers["textDocument/hover"],
         ["textDocument/signaturehelp"] = handlers["textDocument/signaturehelp"],
@@ -183,6 +197,22 @@ lsp_config.volar.setup({
 })
 
 lsp_config.tsserver.setup({
+    handlers = handlers,
+    capabilities = capabilities,
+})
+
+lsp_config.pyright.setup({
+    handlers = handlers,
+    capabilities = capabilities,
+})
+
+lsp_config.cmake.setup({
+    handlers = handlers,
+    capabilities = capabilities,
+})
+
+
+lsp_config.swift_mesonls.setup({
     handlers = handlers,
     capabilities = capabilities,
 })

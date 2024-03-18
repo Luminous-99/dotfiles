@@ -115,3 +115,6 @@ require("zen-mode").setup({
 
 require "fidget".setup({
 })
+
+require "flutter-tools".setup({
+})
