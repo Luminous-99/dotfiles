@@ -211,6 +211,10 @@ lsp_config.cmake.setup({
     capabilities = capabilities,
 })
 
+lsp_config.ocamllsp.setup({
+    handlers = handlers,
+    capabilities = capabilities,
+})
 
 lsp_config.swift_mesonls.setup({
     handlers = handlers,
