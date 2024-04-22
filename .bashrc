@@ -129,8 +129,6 @@ export PATH=$PATH:$ANDROID_HOME/emulator
 export PATH=$PATH:$ANDROID_HOME/platform-tools
 export PATH=$PATH:$HOME/Downloads/flutter/bin
 
-
-
 #Bash Prompt
 #original
 #PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\e[01;32m\]\u@\h\[\e[00m\]:\[\e[01;34m\]\w\[\e[00m\]\$"
@@ -170,5 +168,8 @@ text_color="\e[$((0 + $RANDOM % 3));3$((1 + $RANDOM % 9))m"
 
 padded_emoticon=$(pad_half $name_size "( '-')")
 echo -e "\n\t$text_color Welcome, $name!\n\t$text_color$padded_emoticon\e\n\e[0m" 
+
 . "$HOME/.cargo/env"
 
+export GTK_USE_PORTAL=1
+export TERM=alacritty
