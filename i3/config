@@ -188,15 +188,15 @@ bindsym $mod+r mode "resize"
 bindsym XF86MonBrightnessUp exec --no-startup-id ~/dotfiles/i3/brightness_notify.sh Up
 bindsym XF86MonBrightnessDown exec --no-startup-id ~/dotfiles/i3/brightness_notify.sh Down
 
-for_window [floating] border pixel 2
-for_window [tiling]   border pixel 2
+for_window [tiling]   border pixel 1
+for_window [floating] border pixel 0
 title_align center
 
 gaps inner 5px
 gaps outer 5px
 
 # class                     border    backgr.   text      indicator child_border
-client.focused              #a0a0f0   #a0a0f0   #000000   #a0a0f0
+client.focused              #cba6f8   #cba6f8   #303447   #a0a0f0
 client.unfocused            #000000   #000000   #a0a0f0
 
 hide_edge_borders smart
@@ -220,6 +220,6 @@ bindsym Control+Mod1+space  exec --no-startup-id dunstctl close-all
 exec --no-startup-id ~/dotfiles/i3/.fehbg &
 exec --no-startup-id dunst -conf ~/dotfiles/dunst/dunstrc &
 exec --no-startup-id picom -b --vsync -f
-exec --no-startup-id vivaldi-stable 
-exec --no-startup-id kitty 
+#exec --no-startup-id vivaldi-stable 
+#exec --no-startup-id kitty 
 exec --no-startup-id eww open bar 
