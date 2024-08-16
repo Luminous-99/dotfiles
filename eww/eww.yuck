@@ -116,8 +116,6 @@
 
 (defwindow menu
   :monitor 0
-  :windowtype "dialog"
-  :wm-ignore true
   :geometry (geometry :x "95%"
                       :y "4%"
                       :width "64px"
