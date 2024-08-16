@@ -1,5 +1,3 @@
-require "cmpconf"
-
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 capabilities.textDocument.completion.completionItem.snippetSupport = true;
 
@@ -48,14 +46,15 @@ vim.api.nvim_create_autocmd('LspAttach', {
 
 local lsp_config = require 'lspconfig'
 
---local lspz = require 'lsp-zero'
---
---lspz.preset('recommended')
---
---lspz.set_preferences({ sign_icons = {}, })
---
---lspz.setup()
+local lspz = require 'lsp-zero'
 
+lspz.preset('recommended')
+
+lspz.set_preferences({ sign_icons = {}, })
+
+lspz.setup()
+
+require "cmpconf"
 
 lsp_config.clangd.setup({
     cmd = { 'clangd',
@@ -67,9 +66,13 @@ lsp_config.clangd.setup({
         '--background-index'
     },
     handlers = handlers,
+    on_attach = function()
+        require("clangd_extensions.inlay_hints").setup_autocmd()
+        require("clangd_extensions.inlay_hints").set_inlay_hints()
+    end
 })
 
-lsp_config.ruby_ls.setup({
+lsp_config.ruby_lsp.setup({
     handlers = handlers,
     capabilities = capabilities,
 })
@@ -88,7 +91,7 @@ lsp_config.lua_ls.setup {
     settings = {
         Lua = {
             workspace = {
-                checkThirdParty = false
+                checkThirdParty = false,
             }
         }
     },
@@ -165,7 +168,7 @@ lsp_config.clojure_lsp.setup({
 })
 
 lsp_config.html.setup({
-    filetypes = { 'php','html', 'vue', 'twig' },
+    filetypes = { 'php', 'html', 'vue', 'twig' },
     handlers = {
         ["textDocument/hover"] = handlers["textDocument/hover"],
         ["textDocument/signaturehelp"] = handlers["textDocument/signaturehelp"],
@@ -182,7 +185,7 @@ lsp_config.html.setup({
 })
 
 lsp_config.emmet_ls.setup({
-    filetypes = { 'php','html', 'vue', 'twig' },
+    filetypes = { 'php', 'html', 'vue', 'twig' },
     handlers = {
         ["textDocument/hover"] = handlers["textDocument/hover"],
         ["textDocument/signaturehelp"] = handlers["textDocument/signaturehelp"],
@@ -230,6 +233,10 @@ lsp_config.cssls.setup({
     },
     capabilities = capabilities,
 })
+
+lsp_config.dartls.setup {
+    cmd = { "dart", 'language-server', '--protocol=lsp' },
+}
 
 vim.api.nvim_command('au BufRead,BufNewFile *.xaml set filetype=xml')
 vim.api.nvim_command('au BufRead,BufNewFile *.axaml set filetype=xml')

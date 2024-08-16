@@ -1,26 +1,67 @@
-local opt = vim.opt
 local map = vim.api.nvim_set_keymap
+local nvim = vim.api
 
-opt.number = true
-opt.relativenumber = true
-opt.tabstop = 4
-opt.shiftwidth = 4
-opt.expandtab = true
-opt.termguicolors = true
-opt.encoding = "utf-8"
-opt.fileencoding = "utf-8"
+vim.opt.number = true
+vim.opt.relativenumber = true
+vim.opt.tabstop = 4
+vim.opt.shiftwidth = 4
+vim.opt.expandtab = true
+vim.opt.termguicolors = true
+vim.opt.encoding = "utf-8"
+vim.opt.fileencoding = "utf-8"
+vim.g.mapleader = " "
+vim.g.blamer_delay = 500
+vim.g.blamer_enabled = true
+vim.wo.cursorline = true;
 
-vim.cmd("colorscheme catppuccin-frappe")
+vim.cmd.colorscheme("gruvbox")
+vim.cmd("set background=light")
 
-map("n", "<Space>ff", "<cmd>Telescope find_files<cr>", { noremap = true, silent = true })
-map("n", "<Space>fg", "<cmd>Telescope live_grep<cr>", { noremap = true, silent = true })
-map("n", "<Space>fb", "<cmd>Telescope buffers<cr>", { noremap = true, silent = true })
-map("n", "<Space>fh", "<cmd>Telescope help_tags<cr>", { noremap = true, silent = true })
+map("n", "<Leader>ff", "<cmd>Telescope find_files<cr>", { noremap = true, silent = true })
+map("n", "<Leader>fg", "<cmd>Telescope live_grep<cr>", { noremap = true, silent = true })
+map("n", "<Leader>fb", "<cmd>Telescope buffers<cr>", { noremap = true, silent = true })
+map("n", "<Leader>fh", "<cmd>Telescope help_tags<cr>", { noremap = true, silent = true })
+map("n", "<Leader>sh", "<cmd>ClangdSwitchSourceHeader<cr>", {})
+map("n", "<Leader>dn", "<cmd>lua vim.diagnostic.goto_next()<cr>", {})
+map("n", "<Leader>dp", "<cmd>lua vim.diagnostic.goto_prev()<cr>", {})
 map("n", "<C-d>", "<C-d>zz", {})
 map("n", "<C-u>", "<C-u>zz", {})
-map("n", "<Space>dn", "<cmd>lua vim.diagnostic.goto_next()<cr>", {})
-map("n", "<Space>dp", "<cmd>lua vim.diagnostic.goto_prev()<cr>", {})
 map("i", "<C-c>", "<Esc>", {})
+
+local comment_prefixes = {
+    { "*.c",      "//" },
+    { "*.cpp",    "//" },
+    { "*.cs",     "//" },
+    { "*.rs",     "//" },
+    { "*.java",   "//" },
+    { "*.js",     "//" },
+    { "*.ts",     "//" },
+    { "*.php",    "//" },
+    { "*.sh",     "#" },
+    { "Makefile", "#" },
+    { "*.lua",    "--" },
+    { "*.lisp",   ";;" },
+    { "*.scm",    ";;" },
+}
+
+for _, pair in ipairs(comment_prefixes) do
+    local ext, pre = unpack(pair)
+    vim.api.nvim_create_autocmd("BufEnter", {
+        pattern = ext,
+        callback = function()
+            map("n", "<Leader>cc", "_Di" .. pre .. " <Esc>p", {})
+        end
+    })
+end
+
+map("n", '<Leader>w"', 'diwi""<Esc>hpF"', {})
+map("n", '<Leader>w\'', 'diwi\'\'<Esc>hpF"', {})
+map("n", '<Leader>wb', 'diwi()<Esc>hpF(', {})
+map("n", '<Leader>w(', 'diwi()<Esc>hpF(', {})
+map("n", '<Leader>wB', 'diwi{}<Esc>hpF{', {})
+map("n", '<Leader>w{', 'diwi{}<Esc>hpF{', {})
+map("n", '<Leader>wq', 'diwi[]<Esc>hpF[', {})
+map("n", '<Leader>w[', 'diwi[]<Esc>hpF[', {})
 
 local diagnostic_signs = { Error = "", Warn = "", Info = "󰋼", Hint = "󰋼" }
 
@@ -32,10 +73,3 @@ for name, sign in pairs(diagnostic_signs) do
         texthl = hl,
     })
 end
-
-vim.api.nvim_create_autocmd('BufEnter', {
-    pattern = { '*.qml' },
-    callback = function()
-        vim.treesitter.start(vim.api.nvim_get_current_buf(), "qmljs");
-    end
-})

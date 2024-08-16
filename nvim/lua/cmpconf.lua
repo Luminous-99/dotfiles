@@ -1,34 +1,33 @@
 local cmp = require 'cmp'
 
 local symbols = {
-    ["Function"]    = "󰊕  ",
-    ["Method"]      = "  ",
-    ["Constructor"] = "  ",
-    ["Reference"]   = " ",
-    ["Class"]       = "  ",
-    ["Interface"]   = "  ",
-    ["Struct"]      = "  ",
-    ["Field"]       = "  ",
-    ["Property"]    = "  ",
-    ["Variable"]    = "  ",
-    ["Value"]       = "  ",
-    ["TypeParameter"]       = "  ",
-    ["Unit"]       = "  ",
-    ["Constant"]    = "  ",
-    ["Enum"]        = "  ",
-    ["EnumMember"]  = "  ",
-    ["Keyword"]     = "  ",
-    ["Event"]       = "  ",
-    ["Snippet"]     = "  ",
-    ["Text"]        = "󰦨  ",
-    ["File"]        = "  ",
-    ["Module"]      = "  ",
-    ["Folder"]      = "  ",
+    ["Function"]      = "󰊕 ",
+    ["Method"]        = " ",
+    ["Constructor"]   = " ",
+    ["Reference"]     = " ",
+    ["Class"]         = " ",
+    ["Interface"]     = " ",
+    ["Struct"]        = " ",
+    ["Field"]         = " ",
+    ["Property"]      = " ",
+    ["Variable"]      = " ",
+    ["Value"]         = " ",
+    ["TypeParameter"] = " ",
+    ["Unit"]          = " ",
+    ["Constant"]      = " ",
+    ["Enum"]          = " ",
+    ["EnumMember"]    = " ",
+    ["Keyword"]       = " ",
+    ["Event"]         = " ",
+    ["Snippet"]       = " ",
+    ["Text"]          = "󰦨 ",
+    ["File"]          = " ",
+    ["Module"]        = " ",
+    ["Folder"]        = " ",
 }
 
 ---@param str string
 ---@return string
----@nodiscard
 function trim_left(str)
     for i = 1, str:len(), 1 do
         if str[i] ~= " " then
@@ -64,15 +63,8 @@ end
 cmp.setup({
     formatting = {
         expandable_indicator = false,
-        fields = {  'kind','abbr', 'menu', },
+        fields = { 'abbr', 'menu', 'kind',  },
         format = function(_, vim_item)
-            if vim_item.kind == "Function" or vim_item.kind == "Method" then
-                vim_item.abbr = trim_left(remove_params(vim_item.abbr))
-            elseif vim_item.kind == "Class" then
-                vim_item.abbr = trim_left(remove_template(vim_item.abbr))
-            else
-                vim_item.abbr = trim_left(vim_item.abbr)
-            end
             if symbols[vim_item.kind] ~= nil then
                 vim_item.kind = symbols[vim_item.kind]
             end
