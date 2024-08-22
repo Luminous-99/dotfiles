@@ -12,4 +12,5 @@ if [ -d "$HOME/.local/bin" ] ; then
     PATH="$HOME/.local/bin:$PATH"
 fi
 
-. "$HOME/.cargo/env"
+export PYTHON_ENV="$HOME/.local/share/py"
+export PATH="$PATH:~/.config/doom/bin"
