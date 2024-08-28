@@ -41,6 +41,8 @@ local comment_prefixes = {
     { "Makefile", "#" },
     { "*.lua",    "--" },
     { "*.lisp",   ";;" },
+    { "*.el",     ";;" },
+    { ".emacs",   ";;" },
     { "*.scm",    ";;" },
 }
 
@@ -54,14 +56,21 @@ for _, pair in ipairs(comment_prefixes) do
     })
 end
 
-map("n", '<Leader>w"', 'diwi""<Esc>hpF"', {})
-map("n", '<Leader>w\'', 'diwi\'\'<Esc>hpF"', {})
-map("n", '<Leader>wb', 'diwi()<Esc>hpF(', {})
-map("n", '<Leader>w(', 'diwi()<Esc>hpF(', {})
-map("n", '<Leader>wB', 'diwi{}<Esc>hpF{', {})
-map("n", '<Leader>w{', 'diwi{}<Esc>hpF{', {})
-map("n", '<Leader>wq', 'diwi[]<Esc>hpF[', {})
-map("n", '<Leader>w[', 'diwi[]<Esc>hpF[', {})
+local containter_syms = {
+    { '"',  '"',  '"' },
+    { '\'', '\'', '\'' },
+    { 'b',  '(',  ')' },
+    { '(',  '(',  ')' },
+    { 'B',  '{',  '}' },
+    { '{',  '{',  '}' },
+    { 'q',  '[',  ']' },
+    { '[',  '[',  ']' },
+}
+
+for _, triple in ipairs(containter_syms) do
+    local key, left, right = unpack(triple)
+    map("n", '<Leader>w' .. key, 'diwi' .. left .. right .. '<Esc>hpF' .. left, {})
+end
 
 local diagnostic_signs = { Error = "", Warn = "", Info = "󰋼", Hint = "󰋼" }
 
