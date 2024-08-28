@@ -12,7 +12,7 @@
 (add-hook 'c++-mode-hook 'lsp)
 (elcord-mode 1)
 (setf undo-tree-auto-save-history nil)
-(setf backup-directory-alist '(("." . temporary-file-directory)))
+(setf backup-directory-alist (list (cons "." temporary-file-directory)))
 
 (use-package evil
   :ensure t
