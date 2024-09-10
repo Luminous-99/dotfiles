@@ -6,7 +6,7 @@
 (require 'package)
 (setf warning-minimum-level :error
       inhibit-startup-screen t
-      backup-directory-alist '("." . temporary-file-directory))
+      backup-directory-alist `(("." . ,temporary-file-directory)))
 
 (add-hook 'c-mode-hook 'lsp)
 (add-hook 'c++-mode-hook 'lsp)
