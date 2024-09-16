@@ -4,7 +4,7 @@
     frame_width = 1
     frame_color = "#171421"
     
-    font = Cascadia Code
+    font = 0xProto
     
     # Allow a small subset of html markup:
     #   <b>bold</b>
@@ -179,10 +179,19 @@
 [urgency_low]
     # IMPORTANT: colors have to be defined in quotation marks.
     # Otherwise the "#" and following would be interpreted as a comment.
-    timeout = 10
+    timeout = 5
+    background = "#f2e5bc" 
+    foreground = "#3c3836" 
+    frame_color = "#3c3836"
 
 [urgency_normal]
     timeout = 10
+    background = "#f2e5bc" 
+    foreground = "#3c3836" 
+    frame_color = "#3c3836"
 
 [urgency_critical]
     timeout = 0
+    background = "#f2e5bc" 
+    foreground = "#3c3836" 
+    frame_color = "#3c3836"

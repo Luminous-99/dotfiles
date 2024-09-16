@@ -25,36 +25,46 @@ configuration {
 }
 
 * {
-    red:                         rgba ( 220, 50, 47, 100 % );
-    selected-active-foreground:  rgba ( 128, 203, 196, 100 % );
-    lightfg:                     rgba ( 88, 104, 117, 100 % );
-    separatorcolor:              rgba ( 30, 37, 41, 0 % );
-    urgent-foreground:           rgba ( 255, 24, 68, 100 % );
-    alternate-urgent-background: rgba ( 39, 50, 56, 100 % );
-    lightbg:                     rgba ( 238, 232, 213, 100 % );
-    background-color:            transparent;
-    border-color:                rgba( 0,0,0,0%);
-    normal-background:           rgba ( 58, 58, 58, 100% );
-    bordercolor:                 rgba( 0,0,0,0%);
-    alternate-active-background: rgba ( 58, 58, 58, 100 % );
-    active-foreground:           rgba ( 128, 203, 196, 100 % );
-    blue:                        rgba ( 38, 139, 210, 100 % );
-    alternate-normal-foreground: var(foreground);
-    urgent-background:           rgba ( 39, 50, 56, 100 % );
-    selected-normal-foreground:  White;
-    selected-active-background:  rgba ( 57, 66, 73, 100 % );
-    background:                  rgba ( 58, 58, 58, 100% );
-    selected-urgent-background:  rgba ( 57, 66, 73, 100% );
-    active-background:           rgba ( 58, 58, 58, 100% );
-    alternate-active-foreground: var(active-foreground);
-    alternate-normal-background: rgba ( 58, 58, 58, 100% );
-    foreground:                  rgba ( 193, 193, 193, 100% );
-    alternate-urgent-foreground: var(urgent-foreground);
-    selected-urgent-foreground:  rgba ( 255, 24, 68, 100 % );
-    spacing:                     2;
-    normal-foreground:           var(foreground);
-    selected-normal-background:  rgba ( 58, 58, 58, 100 % );
-    border-radius: 0px;
+    gruvbox-light-bg0-soft:     #f2e5bc;
+    gruvbox-light-bg1:          #ebdbb2;
+    gruvbox-light-bg2:          #d5c4a1;
+    gruvbox-light-fg0:          #282828;
+    gruvbox-light-fg1:          #3c3836;
+    gruvbox-light-red-dark:     #9d0006;
+    gruvbox-light-red-light:    #cc241d;
+    gruvbox-light-yellow-dark:  #b57614;
+    gruvbox-light-yellow-light: #d79921;
+    gruvbox-light-gray:         #7c6f64;
+
+    /* Theme colors */
+    background:                  @gruvbox-light-bg0-soft;
+    background-color:            @background;
+    foreground:                  @gruvbox-light-fg1;
+    border-color:                @gruvbox-light-gray;
+    separatorcolor:              @border-color;
+    scrollbar-handle:            @border-color;
+
+    normal-background:           @background;
+    normal-foreground:           @foreground;
+    alternate-normal-background: @gruvbox-light-bg1;
+    alternate-normal-foreground: @foreground;
+    selected-normal-background:  @gruvbox-light-bg2;
+    selected-normal-foreground:  @gruvbox-light-fg0;
+
+    active-background:           @gruvbox-light-yellow-dark;
+    active-foreground:           @background;
+    alternate-active-background: @active-background;
+    alternate-active-foreground: @active-foreground;
+    selected-active-background:  @gruvbox-light-yellow-light;
+    selected-active-foreground:  @active-foreground;
+
+    urgent-background:           @gruvbox-light-red-dark;
+    urgent-foreground:           @background;
+    alternate-urgent-background: @urgent-background;
+    alternate-urgent-foreground: @urgent-foreground;
+    selected-urgent-background:  @gruvbox-light-red-light;
+    selected-urgent-foreground:  @urgent-foreground;
+    border-radius: 20px;
 }
 window {
     padding:          5;
@@ -159,7 +169,7 @@ case-indicator {
 }
 entry {
     spacing:    0;
-    font: "Cascadia Code 20";
+    font: "0xProto 20";
     text-color: var(normal-foreground);
     placeholder: "...";
 }
@@ -171,10 +181,8 @@ prompt {
 }
 textbox-prompt-colon {
     margin:     0px 10px 0px 10px ;
-    font: "Cascadia Code 21";
+    font: "0xProto 21";
     expand:     false;
     str:        " ";
     text-color: var(normal-foreground);
 }
-
-//@theme "/usr/share/rofi/themes/android_notification.rasi"

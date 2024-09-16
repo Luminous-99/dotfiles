@@ -218,7 +218,7 @@ bindsym Control+Mod1+space  exec --no-startup-id dunstctl close-all
 #exec_always --no-startup-id $HOME/dotfiles/polybar/launch.sh
 
 exec --no-startup-id ~/dotfiles/i3/.fehbg &
-exec --no-startup-id dunst -conf ~/dotfiles/dunst/dunstrc &
+exec --no-startup-id dunst -conf ~/.config/dunst/dunstrc &
 exec --no-startup-id picom -b --vsync -f
 #exec --no-startup-id vivaldi-stable 
 #exec --no-startup-id kitty 
