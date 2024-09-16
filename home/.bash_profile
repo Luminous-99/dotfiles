@@ -14,3 +14,4 @@ fi
 
 export PYTHON_ENV="$HOME/.local/share/py"
 export PATH="$PATH:~/.config/doom/bin"
+export SBCL_HOME="/usr/lib/sbcl/"
