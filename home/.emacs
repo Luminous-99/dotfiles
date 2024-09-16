@@ -1,3 +1,5 @@
+(setf frame-resize-pixelwise t)
+(fringe-mode 0)
 (setf lexical-binding t)
 (setf custom-file (concat user-emacs-directory "custom.el"))
 (when (file-exists-p custom-file)
@@ -10,6 +12,8 @@
 
 (add-hook 'c-mode-hook 'lsp)
 (add-hook 'c++-mode-hook 'lsp)
+(add-hook 'lisp-mode-hook '(lambda (&rest args)
+			     (paredit-mode)))
 
 (set-face-attribute 'default nil :family "0xProto" :height 120)
 (load-theme 'gruvbox-light-soft t)
@@ -31,7 +35,18 @@
      (package-install package)))
 
 (dotimes (tab 10)
-  (global-set-key (kbd (format "C-%d" tab)) `(lambda () (interactive) (tab-bar-select-tab ,tab))))
+  (global-set-key (kbd (format "C-%d" tab))
+		  `(lambda () (interactive) (tab-bar-select-tab ,tab))))
+
+(use-package multiple-cursors
+  :ensure t
+  :config
+  (setf mc/always-run-for-all t)
+  (global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
+  (global-set-key (kbd "C->") 'mc/mark-next-like-this)
+  (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
+  (global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this)
+  (multiple-cursors-mode 1))
 
 (use-package undo-tree
   :ensure t
@@ -44,7 +59,7 @@
   :ensure t
   :config
   (setf inferior-lisp-program "sbcl")
-  (slime-setup '(slime-company)))
+  (slime-setup '(slime-fancy slime-company)))
 
 (use-package company
   :ensure t
