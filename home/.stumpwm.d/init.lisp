@@ -8,27 +8,37 @@
 		       :dont-close t)
   (echo-string (current-screen) 
 	       "Starting swank. M-x slime-connect RET RET, then (in-package stumpwm)."))
-(swank)
 
 (uiop:run-program "xmodmap -e \"clear mod4\" && xmodmap -e \"keycode 133 = F20\"")
 (set-prefix-key (kbd "F20"))
 (uiop:run-program "picom -b --vsync -f")
 (defparameter *startup-programs* '(("dunst" . "-conf ~/.config/dunst/dunstrc")
+				   ("kdeconnectd" . "")
 				   ("emacsclient" . "--alternate-editor= -c")
 				   ("firefox" . "")
 				   ("vesktop" . "")
 				   ("steam" . "")))
-(dolist (program *startup-programs*)
-  (run-or-raise (format nil "~a ~a" (car program) (cdr program))
-		`(:class ,(car program))))
+(defun window-existsp (class)
+  (let ((windows (list-windows (current-group))))
+    (loop for window in windows
+	  when (classed-p window class)
+	  return t)))
+
+(defun run-program (name args &optional (class nil))
+  (unless (window-existsp class)
+    (uiop:launch-program (concatenate 'string name "" args))))
+
+(defun run-programs (alist)
+  (bt:make-thread
+   (lambda (&rest args) (dolist (program alist)
+      (run-program (car program) (cdr program) (car program))))))
+
+(run-programs *startup-programs*)
 
 (defcommand close-window-and-frame () ()
   (unless (only-one-frame-p)
     (delete-window)
     (remove-split)))
-
-(define-key *root-map* (kbd "d")
-  "exec dmenu_run -fn 0xProto -nb \"#f2e5bc\" -nf \"#3c3836\"")
 
 (defparameter *split-dir* nil)
 
@@ -40,6 +50,11 @@
 
 ;; (add-hook *new-window-hook* #'new-window-action)
 
+(undefine-key *root-map* (kbd "d")) 
+(define-key *root-map* (kbd "d")
+  "exec dmenu_run -fn 0xProto -nb \"#f2e5bc\" -nf \"#3c3836\"")
+
+(undefine-key *root-map* (kbd "D")) 
 (define-key *root-map* (kbd "D")
   "exec rofi -show drun")
 
