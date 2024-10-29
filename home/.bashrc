@@ -7,8 +7,8 @@
 
 shopt -s histappend
 HISTCONTROL=ignoreboth
-HISTSIZE=1000
-HISTFILESIZE=2000
+HISTSIZE=2000
+HISTFILESIZE=4000
 
 shopt -s checkwinsize
 alias ls='ls --color=auto'
@@ -66,4 +66,10 @@ alias la='ls -Ah'
 alias ll='ls -ahlF'
 alias l='ls -CFh'
 
-[ -f "/home/luminous99/.ghcup/env" ] && . "/home/luminous99/.ghcup/env" # ghcup-env
+[ -f "$HOME/.ghcup/env" ] && . "$HOME/.ghcup/env" # ghcup-env
+
+source "$HOME/.env"
+
+function fman () {
+    man -k '' | fzf | awk '{print $1}' | xargs man
+}
