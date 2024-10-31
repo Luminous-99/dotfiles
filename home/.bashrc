@@ -54,9 +54,9 @@ echo -e "\n\t$text_color Welcome, $name!\n\t$text_color$padded_emoticon\e\n\e[0m
 
 export GTK_USE_PORTAL=1
 export MOZ_ENABE_WAYLAND=1
-export TERM=kitty
-export VISUAL=nvim
-export EDITOR=nvim
+export TERM=alacritty
+export VISUAL=emacsclient
+export EDITOR=emacsclient
 
 export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 alias grep='grep --color=auto'
