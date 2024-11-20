@@ -7,6 +7,22 @@
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
 
+(which-key-mode 1)
+(global-set-key (kbd "C-x C-d") #'dired)
+(global-set-key (kbd "C-x d") #'list-directory)
+(global-set-key (kbd "C-c l") #'org-store-link)
+(global-set-key (kbd "C-c a") #'org-agenda)
+(global-set-key (kbd "C-c c") #'org-capture)
+
+(setq org-startup-with-inline-images t
+      org-image-align 'center 
+      org-ellipsis ""
+      org-display-remote-inline-images 'download
+      org-image-actual-width nil
+      org-return-follows-link t)
+
+(add-hook 'org-mode-hook (lambda () (org-indent-mode 1)))
+
 (setq calendar-date-style 'european)
 (setq user-mail-address (getenv "MAIL_ADDRESS")
       user-full-name "luminous99"
@@ -61,8 +77,24 @@
 (add-hook 'lisp-mode-hook (lambda (&rest args) (paredit-mode 1)))
 (add-hook 'emacs-lisp-mode-hook (lambda (&rest args) (paredit-mode 1)))
 
-(set-face-attribute 'default nil :family "0xProto" :height 120)
-(setf prettify-symbols-alist '(("lambda" . 955)))
+(defface org-checkbox-todo
+    '((t (:inherit org-checkbox)))
+    "")
+
+(defface org-checkbox-done
+    '((t (:inherit org-checkbox :foreground "#427b58")))
+    "")
+
+(font-lock-add-keywords 'org-mode
+			`((,(rx "[ ]") 0 'org-checkbox-todo prepend)
+			  (,(rx "[X]") 0 'org-checkbox-done prepend)))
+
+(set-face-attribute 'default nil :family "0xProto Nerd Font" :height 120)
+(setf prettify-symbols-alist '(("lambda" . 955)
+			       ("[X]" . ?󰄲)
+			       ("[ ]" . ?󰄮)
+			       ("[-]" . ?󰡖)))
+
 (add-hook 'lisp-mode-hook   (lambda (&rest args) (prettify-symbols-mode 1)))
 (add-hook 'scheme-mode-hook (lambda (&rest args) (prettify-symbols-mode 1)))
 (add-hook 'racket-mode-hook (lambda (&rest args) (prettify-symbols-mode 1)))
@@ -103,6 +135,7 @@
   (global-company-mode 1)
   (company-quickhelp-mode 1))
 
+(add-hook 'slime-repl-mode-hook (lambda () (paredit-mode 1)))
 (use-package slime
   :ensure t
   :config
