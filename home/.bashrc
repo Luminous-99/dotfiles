@@ -71,5 +71,10 @@ alias l='ls -CFh'
 source "$HOME/.env"
 
 function fman () {
-    man -k '' | fzf | awk '{print $1}' | xargs man
+    man -k '' \
+	| fzf -e --preview-window="bottom:50%" --preview="echo {} | awk '{print $1}' | xargs -r man" \
+	| awk '{print $1}' \
+	| xargs -r man
 }
+
+eval "$(_AUTO_CPUFREQ_COMPLETE=bash_source auto-cpufreq)"
