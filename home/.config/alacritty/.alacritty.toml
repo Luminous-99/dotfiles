@@ -1,4 +1,4 @@
-import = [ "~/dotfiles/alacritty/themes/gruvbox.toml", ]
+general.import = [ "~/dotfiles/alacritty/themes/gruvbox.toml", ]
 
 [font]
 normal = { family = "0xProto", style="regular" }
