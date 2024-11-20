@@ -10,8 +10,18 @@
 ;; (asdf:load-system "stumpwm-configuration")
 
 (ql:quickload :swank)
+(ql:quickload :stumpwm)
 (ql:quickload :clx-truetype)
 (in-package :stumpwm)
+
+(load-module "swm-gaps")
+
+(swm-gaps:toggle-gaps-off)
+
+(defun toggle-gaps ()
+  (if (null (cdr (group-frames (current-group))))
+      (swm-gaps:toggle-gaps-off)
+      (swm-gaps:toggle-gaps-on)))
 
 (defun window-exists? (class)
   (let ((windows (group-windows (current-group))))
@@ -76,7 +86,28 @@
 (defcommand brightness-down () ()
   (run-shell-command "~/.stumpwm.d/scripts/brightness_notify.sh Down"))
 
-;; Music
+(defmacro when-return (expr)
+  (with-gensyms (val)
+      `(let ((,val ,expr))
+	 (if ,val ,val nil))))
+
+;; Sort windows on destruction
+(defun sort-current-group (window)
+  (declare (ignorable window))
+  (let* ((windows (list-windows (current-group)))
+	 (windows (sort windows (lambda (x y)
+				  (when y 
+				    (< (window-number x)
+				       (window-number y)))))))
+    (do ((rest windows (cdr rest))) ((null (cdr rest)) rest)
+      (let ((num1 (window-number (car rest))) 
+	    (num2 (window-number (cadr rest)))
+	    (win (cadr rest)))
+	(when (and num2 (> num2 (1+ num1))) 
+	  (setf (window-number win) (1+ num1)))))))
+
+(setf *destroy-window-hook* (list #'sort-current-group))
+
 (defparameter *player* "spotify")
 
 (defcommand set-player (player) ((:string "Enter player: "))
@@ -141,17 +172,36 @@
 (defcommand close-window-and-frame () ()
   (unless (only-one-frame-p)
     (delete-window)
-    (remove-split)))
+    (remove-split))
+  (toggle-gaps))
 
 (defcommand toggle-maximize () ()
   (if (window-max (current-window))
       (unfloat-this)
       (float-this)))
 
+(defun set-window-property (window property value)
+  (xlib:change-property (window-xwin window) property (list value) :integer 32))
+
+(defun set-floating (window floating)
+  (if floating
+      (progn
+	(float-window window (current-group))
+	(set-window-property window :_STUMPWM_FLOATING 1))
+      (progn
+	(unfloat-window window (current-group))
+	(set-window-property window :_STUMPWM_FLOATING 0))))
+
+(defcommand terminate-this () ()
+  (let ((window (current-window)))
+    (kill-window window)
+    (toggle-gaps)))
+
 (defcommand toggle-float () ()
-  (if (float-window-p (current-window))
-      (unfloat-this)
-      (float-this)))
+  (let ((window (current-window)))
+    (if (float-window-p window)
+	(set-floating window nil)
+	(set-floating window t))))
 
 ;; Audio 
 (define-keys *top-map*
@@ -177,15 +227,36 @@
 ;; Programs
 (define-keys *root-map*
   ("d" . "exec dmenu_run -fn 0xProto -nb \"#f2e5bc\" -nf \"#3c3836\"")
-  ( "D" . "exec rofi -show drun"))
+  ("D" . "exec rofi -show drun"))
+
+(defcommand delete-split () ()
+  (remove-split)
+  (toggle-gaps))
+
+(defcommand split-horizontal () ()
+  (hsplit)
+  (toggle-gaps))
+
+(defcommand split-vertical () ()
+  (vsplit)
+  (toggle-gaps))
+
+(defcommand screenshot () ()
+  (run-shell-command "flameshot gui"))
 
 ;; Windows
 (define-keys *root-map*
   ("f" . "toggle-float")
   ("F" . "toggle-always-on-top")
+  ("M-f" . "screenshot")
   ("R" . "iresize-float")
-  ("x" . "remove-split")
+  ("x" . "delete-split")
   ("X" . "close-window-and-frame")
+  ("s" . "split-vertical")
+  ("S" . "split-horizontal")
+  ("k" . "terminate-this")
+  ("C-k" . "terminate-this")
+  ("K" . "terminate-this")
   ("Up" . "move up")
   ("Left" . "move left")
   ("Right" . "move right")
@@ -201,17 +272,19 @@
     (format nil "gmove ~a" (1+ i))))
 
 
-(dotimes (i 8)
+(dotimes (i 7)
   (gnew (format nil "Group ~a" (+ i 2))))
+(gnew-dynamic "Group 9")
 
-(defparameter *startup-programs* '(("picom" . "-b --vsync -f")
-				   ("dunst" . "-conf ~/.config/dunst/dunstrc")
-				   ("feh" . "--no-fehbg --bg-scale ~/dotfiles/Background/The_Garden_of_earthly_delights_Reduced.jpg")
-				   ("kdeconnectd" . "")
+(defparameter *startup-programs* '(("kdeconnectd" . "")
 				   ("emacsclient" . "--alternate-editor= -c")
 				   ("firefox" . "")
 				   ("vesktop" . "")
 				   ("steam" . "-silent")))
+
+(run-programs '(("picom" . "-b --vsync -f")
+		("dunst" . "-conf ~/.config/dunst/dunstrc")
+		("feh" . "--no-fehbg --bg-scale ~/dotfiles/Background/The_Garden_of_earthly_delights_Reduced.jpg")))
 
 (defcommand auto-start () ()
   (run-programs *startup-programs*))
@@ -230,7 +303,9 @@
       *transient-border-width* 0
       *message-window-padding* 5
       *message-window-y-padding* 5
-      *mode-line-border-width* 0)
+      *mode-line-border-width* 0
+      swm-gaps:*outer-gaps-size* 5
+      swm-gaps:*inner-gaps-size* 5)
 
 (set-bg-color "#f2e5bc")
 (set-fg-color "#3c3836")
@@ -251,16 +326,13 @@
 
 (load-module "mem")
 (load-module "cpu")
-(load-module "battery-portable")
-(load-module "swm-gaps")
-(setf swm-gaps:*outer-gaps-size* 5)
-(setf swm-gaps:*inner-gaps-size* 5)
+(load-module "battery-portable") 
 (setf *window-format* "%m%n%s%c ")
 (setf *group-format* "[%n]")
-
 (setf *screen-mode-line-format*
       (list "%g %W ^> %C | %M | Battery: %B | %d"))
 (setf *time-modeline-string* "%a %b %e %k:%M")
 (setf *mode-line-timeout* 2)
 (enable-mode-line (current-screen) (current-head) t)
 (xmod-prefix)
+(gselect "1")
