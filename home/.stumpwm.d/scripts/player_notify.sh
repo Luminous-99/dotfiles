@@ -6,14 +6,17 @@ icondir="/tmp/player_notify_icons/"
 artist=$(playerctl --player="$1" metadata --format "{{artist}}")
 title=$(playerctl --player="$1" metadata --format "{{title}}")
 album=$(playerctl --player="$1" metadata --format "{{album}}")
-url=$(playerctl --player="$1" metadata --format "{{mpris:artUrl}}")
-icon_file=$(echo "$icondir/$artist/$title" | tr " " "_")
+sartist=$(playerctl --player="$1" metadata --format "{{artist}}" | tr " " "_")
+stitle=$(playerctl --player="$1" metadata --format "{{title}}" | tr " " "_")
+salbum=$(playerctl --player="$1" metadata --format "{{album}}" | tr " " "_")
+url=$(playerctl --player="$1" metadata --format "{{mpris:artUrl}}" | tr " " "_")
+icon_file=$(echo "$icondir/$sartist/$stitle")
 
 if [ -e "$icon_file" ]; then
     echo
 else
-    mkdir -p "$icondir/$artist"
-    curl -L -o "$icon_file" "$url"
+    mkdir -p "$icondir/$sartist"
+    curl -o "$icon_file" -L "$url"
 fi
 
 if [ -z "$2" ]; then

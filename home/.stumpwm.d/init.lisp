@@ -26,8 +26,8 @@
 (defun window-exists? (class)
   (let ((windows (group-windows (current-group))))
     (loop for window in windows
-	  when (classed-p window class)
-	    return t)))
+          when (classed-p window class)
+            return t)))
 
 (defun run-program (command &optional (class nil))
   (unless (window-exists? class)
@@ -40,9 +40,9 @@
 
 (defun current-track ()
   (concatenate 'string "Playing: "
-	       (string-trim '(#\Newline)
-			    (run-shell-command
-			     "playerctl metadata --format \"{{trunc(artist,14)}} - {{trunc(title,15)}}\"" t))))
+               (string-trim '(#\Newline)
+                            (run-shell-command
+                             "playerctl metadata --format \"{{trunc(artist,14)}} - {{trunc(title,15)}}\"" t))))
 
 (defcommand xmod-prefix () ()
   (run-shell-command "xmodmap -e \"clear mod4\"" t)
@@ -66,13 +66,26 @@
   (swank:list-threads)
   (unless *swank-running*
     (swank:create-server :port 4005
-			 :style swank:*communication-style*
-			 :dont-close t)
+			             :style swank:*communication-style*
+			             :dont-close t)
     (echo-string (current-screen) 
-		 "Starting swank. M-x slime-connect RET RET, then (in-package stumpwm).")
+                 "Starting swank. M-x slime-connect RET RET, then (in-package stumpwm).")
     (setf *swank-running* t)))
 
 (swank)
+
+(defun set-window-property (window property value)
+  (xlib:change-property (window-xwin window) property (list value) :integer 32))
+
+(defun set-floating (window floating)
+  (if floating
+      (progn
+        (float-window window (current-group))
+        (set-window-property window :_STUMPWM_FLOATING 1))
+      (progn
+        (unfloat-window window (current-group))
+        (set-window-property window :_STUMPWM_FLOATING 0))))
+
 
 ;; General audio
 (defcommand volume-up () ()
@@ -88,23 +101,23 @@
 
 (defmacro when-return (expr)
   (with-gensyms (val)
-      `(let ((,val ,expr))
-	 (if ,val ,val nil))))
+    `(let ((,val ,expr))
+	   (if ,val ,val nil))))
 
 ;; Sort windows on destruction
 (defun sort-current-group (window)
   (declare (ignorable window))
   (let* ((windows (list-windows (current-group)))
-	 (windows (sort windows (lambda (x y)
-				  (when y 
-				    (< (window-number x)
-				       (window-number y)))))))
+         (windows (sort windows (lambda (x y)
+                                  (when y 
+                                    (< (window-number x)
+                                       (window-number y)))))))
     (do ((rest windows (cdr rest))) ((null (cdr rest)) rest)
       (let ((num1 (window-number (car rest))) 
-	    (num2 (window-number (cadr rest)))
-	    (win (cadr rest)))
-	(when (and num2 (> num2 (1+ num1))) 
-	  (setf (window-number win) (1+ num1)))))))
+            (num2 (window-number (cadr rest)))
+            (win (cadr rest)))
+        (when (and num2 (> num2 (1+ num1))) 
+          (setf (window-number win) (1+ num1)))))))
 
 (setf *destroy-window-hook* (list #'sort-current-group))
 
@@ -129,10 +142,10 @@
 
 (defun float-move-resize (window &key x y width height)
   (float-window-move-resize window
-			    :x (if x x (window-x window))
-			    :y (if y y (window-y window))
-			    :width (if width width (window-width window))
-			    :height (if height height (window-height window))))
+                            :x (if x x (window-x window))
+                            :y (if y y (window-y window))
+                            :width (if width width (window-width window))
+                            :height (if height height (window-height window))))
 
 (defun float-resize (window dir)
   (with-slots (width height) window
@@ -153,20 +166,20 @@
 (defcommand move (dir) ((:direction "Direction: "))
   (let ((window (current-window)))
     (if (float-window-p window)
-	(if *resizing-mode*
-	    (float-resize window dir)
-	    (float-move window dir))
-	(move-focus dir))))
+        (if *resizing-mode*
+            (float-resize window dir)
+            (float-move window dir))
+        (move-focus dir))))
 
 (defcommand iresize-float () ()
   (setf *resizing-mode* (not *resizing-mode*))
   (if *resizing-mode*
       (define-keys *top-map*
-	("Left" . "move left")
-	("Right" . "move right")
-	("Up" . "move up")
-	("Down" . "move down")
-	("RET" . "iresize-float"))
+        ("Left" . "move left")
+        ("Right" . "move right")
+        ("Up" . "move up")
+        ("Down" . "move down")
+        ("RET" . "iresize-float"))
       (undefine-keys *top-map* "Left" "Right" "Up" "Down" "RET")))
 
 (defcommand close-window-and-frame () ()
@@ -180,18 +193,6 @@
       (unfloat-this)
       (float-this)))
 
-(defun set-window-property (window property value)
-  (xlib:change-property (window-xwin window) property (list value) :integer 32))
-
-(defun set-floating (window floating)
-  (if floating
-      (progn
-	(float-window window (current-group))
-	(set-window-property window :_STUMPWM_FLOATING 1))
-      (progn
-	(unfloat-window window (current-group))
-	(set-window-property window :_STUMPWM_FLOATING 0))))
-
 (defcommand terminate-this () ()
   (let ((window (current-window)))
     (kill-window window)
@@ -200,8 +201,8 @@
 (defcommand toggle-float () ()
   (let ((window (current-window)))
     (if (float-window-p window)
-	(set-floating window nil)
-	(set-floating window t))))
+        (set-floating window nil)
+        (set-floating window t))))
 
 ;; Audio 
 (define-keys *top-map*
@@ -225,9 +226,14 @@
   ("b" . "brightness-down"))
 
 ;; Programs
+(defcommand screenshot () ()
+  (run-shell-command "flameshot gui"))
+
 (define-keys *root-map*
   ("d" . "exec dmenu_run -fn 0xProto -nb \"#f2e5bc\" -nf \"#3c3836\"")
-  ("D" . "exec rofi -show drun"))
+  ("D" . "exec rofi -show drun")
+  ("M-f" . "screenshot")
+  ("M-d" . "exec rofi -show recursivebrowser"))
 
 (defcommand delete-split () ()
   (remove-split)
@@ -241,14 +247,10 @@
   (vsplit)
   (toggle-gaps))
 
-(defcommand screenshot () ()
-  (run-shell-command "flameshot gui"))
-
 ;; Windows
 (define-keys *root-map*
   ("f" . "toggle-float")
   ("F" . "toggle-always-on-top")
-  ("M-f" . "screenshot")
   ("R" . "iresize-float")
   ("x" . "delete-split")
   ("X" . "close-window-and-frame")
@@ -277,14 +279,14 @@
 (gnew-dynamic "Group 9")
 
 (defparameter *startup-programs* '(("kdeconnectd" . "")
-				   ("emacsclient" . "--alternate-editor= -c")
-				   ("firefox" . "")
-				   ("vesktop" . "")
-				   ("steam" . "-silent")))
+                                   ("emacsclient" . "--alternate-editor= -c")
+                                   ("firefox" . "")
+                                   ("vesktop" . "")
+                                   ("steam" . "-silent")))
 
 (run-programs '(("picom" . "-b --vsync -f")
-		("dunst" . "-conf ~/.config/dunst/dunstrc")
-		("feh" . "--no-fehbg --bg-scale ~/dotfiles/Background/The_Garden_of_earthly_delights_Reduced.jpg")))
+                ("dunst" . "-conf ~/.config/dunst/dunstrc")
+                ("feh" . "--no-fehbg --bg-scale ~/dotfiles/Background/The_Garden_of_earthly_delights_Reduced.jpg")))
 
 (defcommand auto-start () ()
   (run-programs *startup-programs*))
@@ -319,14 +321,15 @@
 (xft:cache-fonts)
 (defparameter *font*
   (make-instance 'xft:font
-		 :family "0xProto Nerd Font"
-		 :subfamily "Regular"
-		 :size 12))
+                 :family "0xProto Nerd Font"
+                 :subfamily "Regular"
+                 :size 12))
 (set-font *font*)
 
 (load-module "mem")
 (load-module "cpu")
 (load-module "battery-portable") 
+(load-module "wifi")
 (setf *window-format* "%m%n%s%c ")
 (setf *group-format* "[%n]")
 (setf *screen-mode-line-format*
