@@ -38,18 +38,26 @@
     (destructuring-bind (name . args) program
       (run-program (concatenate 'string name " " args) name))))
 
-(defun current-track ()
-  (concatenate 'string "Playing: "
-               (string-trim '(#\Newline)
-                            (run-shell-command
-                             "playerctl metadata --format \"{{trunc(artist,14)}} - {{trunc(title,15)}}\"" t))))
+(defun run-formatted (fmt &rest args)
+  (string-trim '(#\Newline)
+               (run-shell-command (apply #'format nil fmt args) t)))
 
-(defcommand xmod-prefix () ()
+(defun current-track ()
+  (let ((fmt "playerctl --player=~a metadata --format \"{{trunc(artist,15)}} - {{trunc(title,16)}}\"" )
+        (playing (string= "Playing" (run-formatted "playerctl --player=~a status" *player*))))
+    (if playing
+      (format nil "  ~a  " (run-formatted fmt *player*))
+      "  Paused  ")))
+
+(defcommand xmodmap () ()
   (run-shell-command "xmodmap -e \"clear mod4\"" t)
+  ;; change Left Windows key to F20 key
   (run-shell-command "xmodmap -e \"keycode 133 = F20\"" t)
+  ;; change Menu key to Hyper key
+  (run-shell-command "xmodmap -e \"keycode 135 = Hyper_R\"" t)
   (set-prefix-key (kbd "F20")))
 
-(xmod-prefix)
+(xmodmap)
 
 (defmacro define-keys (map &body keys)
   `(dolist (key ',keys)
@@ -123,9 +131,11 @@
 
 (defparameter *player* "spotify")
 
-(defcommand set-player (player) ((:string "Enter player: "))
-  (unless (string= player "")
-    (setf *player* player)))
+(defcommand set-player () ()
+  (setf *player* (car (select-from-menu (current-screen)
+                                        (mapcar (lambda (string)
+                                                  (car (uiop:split-string string :separator '(#\.))))
+                                                (uiop:split-string (run-formatted "playerctl --list-all") :separator '(#\Newline)))))))
 
 (defcommand toggle-track () ()
   (run-program (format nil ".stumpwm.d/scripts/player_notify.sh ~a" *player*))
@@ -211,29 +221,74 @@
   ("XF86AudioMute" . "volume-mute"))
 
 ;; Music
+(defun get-pactl-applications ()
+  (flet ((simplify-list (string)
+           (unless (zerop (length string))
+             (if (char= #\S (aref string 0))
+                 (string-trim '(#\#) (car (last (uiop:split-string string :separator '(#\Space)))))
+                 (string-downcase (string-trim '(#\" #\ ) (second (uiop:split-string (string-trim '(#\Space #\Tab) string) :separator '(#\=)))))))))
+    (let* ((pactl-output (run-shell-command "pactl list sink-inputs | grep -e node.name -e ' #[0-9]*'" t))
+           (output-list (mapcar #'simplify-list (uiop:split-string pactl-output :separator '(#\Newline)))))
+      (loop for (x y) on output-list by #'cddr
+            when x
+              collect (cons y x)))))
+
+(defun set-application-volume (class volume)
+  (declare (type string class)
+           (type integer volume))
+  (let* ((applications (get-pactl-applications)))
+    (run-formatted "pactl set-sink-input-volume ~a ~a%" (cdr (assoc (string-downcase class) applications :test #'string=)) volume)))
+
+(defun toggle-application-mute (class)
+  (declare (type string class))
+  (let* ((applications (get-pactl-applications)))
+    (run-formatted "pactl set-sink-input-volume ~a ~a%" (cdr (assoc (string-downcase class) applications :test #'string=)))))
+
+(defun list-all-windows ()
+  (apply #'append
+         (loop for group in (screen-groups (current-screen))
+               collect (list-windows group))))
+
+(defcommand set-volume-from-menu () ()
+  (when-let* ((window (select-window-from-menu (list-all-windows) "%c" "App:"))
+              (class (window-class window))
+              (volume (read-one-line (current-screen) "Volume: ")))
+    (set-application-volume class (parse-integer volume)))
+  (values))
+
 (define-keys *root-map*
   ("M-P" . "set-player")
   ("M-t" . "toggle-track")
   ("M-n" . "next-track")
+  ("M-v" . "set-volume-from-menu")
   ("M-p". "previous-track"))
 
-;; Brightness
 (define-keys *top-map*
-  ("XF86MonBrightnessUp" . "brightness-up")
-  ("XF86MonBrightnessDown" . "brightness-down"))
+  ("XF86AudioNext" . "next-track")
+  ("XF86AudioPrev". "previous-track")
+  ("Pause" . "toggle-track"))
+
+;; Brightness
 (define-keys *root-map*
   ("B". "brightness-up")
   ("b" . "brightness-down"))
+
+(define-keys *top-map*
+  ("XF86MonBrightnessUp" . "brightness-up")
+  ("XF86MonBrightnessDown" . "brightness-down"))
 
 ;; Programs
 (defcommand screenshot () ()
   (run-shell-command "flameshot gui"))
 
 (define-keys *root-map*
-  ("d" . "exec dmenu_run -fn 0xProto -nb \"#f2e5bc\" -nf \"#3c3836\"")
+  ("d" . "exec dmenu_run -fn 0xProto -nb \"#f2f2f2\" -nf \"#333333\"")
   ("D" . "exec rofi -show drun")
-  ("M-f" . "screenshot")
   ("M-d" . "exec rofi -show recursivebrowser"))
+
+(define-keys *top-map*
+  ("Print" . "screenshot")
+  ("XF86Mail" . "exec emacsclient --eval \"(progn (mail) (raise-frame))\""))
 
 (defcommand delete-split () ()
   (remove-split)
@@ -246,6 +301,13 @@
 (defcommand split-vertical () ()
   (vsplit)
   (toggle-gaps))
+
+(defcommand clear-messages () ()
+  (unmap-message-window (current-screen)))
+
+(defcommand send-menu-or-hyper () ()
+  (when (equal "Emacs" (window-class (current-window)))
+    (send-fake-key (current-window) (kbd "H-1"))))
 
 ;; Windows
 (define-keys *root-map*
@@ -263,6 +325,7 @@
   ("Left" . "move left")
   ("Right" . "move right")
   ("Down" . "move down")
+  ("ESC" . "clear-messages")
   ("M-Up" . "exchange-direction up")
   ("M-Left" . "exchange-direction left")
   ("M-Right" . "exchange-direction right")
@@ -291,6 +354,13 @@
 (defcommand auto-start () ()
   (run-programs *startup-programs*))
 
+(let ((fg "#333333")
+      (bg "#f2f2f2"))
+  (set-bg-color bg)
+  (set-fg-color fg)
+  (setf *mode-line-background-color* bg
+        *mode-line-foreground-color* fg))
+
 (setf *window-border-style* :none
       *new-window-preferred-frame* '(:unfocused)
       *new-frame-action* :empty
@@ -298,8 +368,6 @@
       *message-window-gravity* :center
       *input-window-gravity* :center
       *float-window-title-height* 15
-      *mode-line-background-color* "#f2e5bc"
-      *mode-line-foreground-color* "#3c3836"
       *maxsize-border-width* 0
       *normal-border-width* 0
       *transient-border-width* 0
@@ -309,8 +377,6 @@
       swm-gaps:*outer-gaps-size* 5
       swm-gaps:*inner-gaps-size* 5)
 
-(set-bg-color "#f2e5bc")
-(set-fg-color "#3c3836")
 
 ;; xfontsel example just in case.
 ;; -------------------------
@@ -318,7 +384,6 @@
 ;; (set-font "-misc-0xproto nerd font-medium-r-normal--17-110-110-110-p-0-iso8859-16")
 ;; -------------------------
 (load-module "ttf-fonts")
-(xft:cache-fonts)
 (defparameter *font*
   (make-instance 'xft:font
                  :family "0xProto Nerd Font"
@@ -332,10 +397,31 @@
 (load-module "wifi")
 (setf *window-format* "%m%n%s%c ")
 (setf *group-format* "[%n]")
+(setf cpu:*cpu-modeline-fmt* "%c %t")
+(setf mem::*mem-modeline-fmt* "  %a %p")
+(setf cpu::*cpu-usage-modeline-fmt*  " ^[~A~3D%^]")
 (setf *screen-mode-line-format*
-      (list "%g %W ^> %C | %M | Battery: %B | %d"))
+      '(" "
+        (:eval
+         (loop for group in (sort (screen-groups (current-screen))
+                                  (lambda (x y)
+                                    (< (group-number x)
+                                       (group-number y))))
+               if (= (group-number (current-group)) (group-number group))
+                 collect (format nil "^R[~a~a]^r "
+                                 (group-number group)
+                                 (if-let ((window (current-window)))
+                                   (format nil " ~a" (window-class window))
+                                   ""))
+               else
+                 collect (format nil "[~a] " 
+                                 (group-number group))))
+        "%W ^>"
+        (:eval
+         (current-track))
+        "│ %C │ %M │ 󰁹 %B │ %d"))
 (setf *time-modeline-string* "%a %b %e %k:%M")
-(setf *mode-line-timeout* 2)
+(setf *mode-line-timeout* 3)
 (enable-mode-line (current-screen) (current-head) t)
-(xmod-prefix)
+(xmodmap)
 (gselect "1")
