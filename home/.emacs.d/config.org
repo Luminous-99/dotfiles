@@ -1,0 +1,485 @@
+#+AUTHOR: luminous99
+#+STARTUP: fold
+
+* Init
+** Load configuration files
+#+begin_src emacs-lisp :tangle init.el
+  ;; -*- lexical-binding: t; -*-
+  (setf custom-file (concat user-emacs-directory "custom.el"))
+  (when (file-exists-p custom-file)
+    (load custom-file))
+
+  (require 'package)
+  (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+  (package-initialize)
+
+  (setf files-to-load '(misc theme completion gnus evil lsp org slime web prettify project)
+        configuration-path (expand-file-name "~/.emacs.d/lisp/"))
+
+  (defun load-config (name)
+    (load (format "%s%s" configuration-path name)))
+
+  (dolist (file files-to-load)
+    (load-config file))
+#+end_src
+** Thing that don't deserve their own file
+#+begin_src emacs-lisp :tangle init.el
+  (defun replace-defun ()
+    "Evalute current Defun, then replace it with it's return value."
+    (interactive)
+    (let* ((region (bounds-of-thing-at-point 'sexp))
+           (string (buffer-substring-no-properties (car region) (cdr region))))
+      (cl-case major-mode
+        ((lisp-interaction-mode emacs-lisp-mode) (delete-region (car region) (cdr region))
+         (let ((form (car (read-from-string string))))
+           (insert (format "%s" (eval form)))))
+        (lisp-mode (delete-region (car region) (cdr region))
+                   (slime-eval-print string)))))
+
+  (keymap-global-set "H-r" #'replace-defun)
+
+  (keymap-set emacs-lisp-mode-map "C-c M-m" #'emacs-lisp-macroexpand)
+  (keymap-set emacs-lisp-mode-map "C-c M-e" #'macrostep-expand)
+  (put 'narrow-to-region 'disabled nil)
+
+#+end_src
+* Projects
+Setup projectile for project management.
+#+begin_src emacs-lisp :tangle lisp/projects.el
+  ;; -*- lexical-binding: t; -*-
+  (use-package projectile
+    :ensure t
+    :config
+    (setf projectile-project-search-path (list "~/projects/")
+          projectile-generic-command "fd -L . -0 --type f --color=never --strip-cwd-prefix")
+    (cl-pushnew "~/dotfiles/" projectile-known-projects :test #'string=)
+    (projectile-load-known-projects)
+    (projectile-discover-projects-in-search-path)
+    (let ((projectile-keymap (make-sparse-keymap)))
+      (keymap-global-set "H-p" projectile-keymap)
+      (keymap-set projectile-keymap "H-a" #'projectile-add-known-project)
+      (keymap-set projectile-keymap "a"   #'projectile-add-known-project)
+      (keymap-set projectile-keymap "H-s" #'projectile-switch-project)
+      (keymap-set projectile-keymap "s"   #'projectile-switch-project)
+      (keymap-set projectile-keymap "H-f" #'projectile-find-file)
+      (keymap-set projectile-keymap "f"   #'projectile-find-file))) 
+#+end_src
+* Ligatures
+#+begin_src emacs-lisp :tangle lisp/ligatures.el
+  ;; -*- lexical-binding: t; -*-
+  (ligature-set-ligatures '(prog-mode) (mapcar #'(lambda (x) (if (symbolp x) (symbol-name x) x))
+  				                             `(-> <- => =>> >=> =>=
+  				                                  =<< =<= <=< <=> >> >>>
+  				                                  << <<< <> <|> == ===
+  				                                  .= := "#=" != !== =!=
+  				                                  =:= :: ::: :<: :>: ||
+  				                                  |> ||> |||> <| <|| <|||
+  				                                  ,** *** <* <*> *> <+
+  				                                  <+> +> <$ <$> $> &&
+  				                                  ?? %% "[|" "|]" // ///)))
+
+  (ligature-set-ligatures '(org-mode) (mapcar #'(lambda (x) (if (symbolp x) (symbol-name x) x))
+  				                            `(-> <- => =>> >=> =>=
+  				                                 =<< =<= <=< <=> >> >>>
+  				                                 << <<< <> <|> == ===
+  				                                 .= := "#=" != !== =!=
+  				                                 =:= :: ::: :<: :>: ||
+  				                                 |> ||> |||> <| <||
+                                                   <||| <* <*> *> <+
+  				                                 <+> +> <$ <$> $> &&
+  				                                 ?? %% "[|" "|]" // ///)))
+
+  (global-ligature-mode 1)
+#+end_src
+* Prettify
+#+begin_src emacs-lisp :tangle lisp/prettify.el
+  ;; -*- lexical-binding: t; -*-
+  (use-package nerd-icons
+    :ensure t)
+
+  (defun prettify ()
+    (setf prettify-symbols-alist '(("lambda" . ?λ) ("[X]" . ?󰱒) ("[ ]" . ?󰄱) ("[-]" . ?󰡖)))
+    (prettify-symbols-mode 1))
+
+  (add-hook 'prog-mode-hook #'prettify)
+  (add-hook 'org-mode-hook #'prettify)
+
+  (load-config "ligatures")
+#+end_src
+* Web
+** Javascript/Typescript
+Setup Lsp, highlighting and other basic features for typescript and javascript.
+#+begin_src emacs-lisp :tangle lisp/web.el
+  ;; -*- lexical-binding: t; -*-
+  (cl-flet ((setup ()
+              (indent-tabs-mode nil)
+              (tide-setup)
+              (flycheck-mode 1)
+              (eldoc-mode 1)
+              (lsp-deferred)
+              (company-mode 1)))
+    (use-package tide
+      :ensure t
+      :after (company flycheck)
+      :hook ((typescript-ts-mode . #'setup)
+             (tsx-ts-mode . #'setup))))
+#+end_src
+
+** HTML/CSS
+Enables Emmet and Web mode.
+#+begin_src emacs-lisp :tangle lisp/web.el
+  (cl-flet ((setup ()
+              (setf web-mode-markup-indent-offset 4
+                    web-mode-code-indent-offset 4
+                    web-mode-css-indent-offset 4) 
+              (emmet-mode 1)))
+    (use-package web-mode
+      :ensure t
+      :hook ((web-mode . #'setup))
+      :config
+      (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
+      (add-to-list 'auto-mode-alist '("\\.blade\\.php\\'" . web-mode))
+      (add-to-list 'auto-mode-alist '("\\.php\\'" . web-mode))))
+#+end_src
+
+** PHP
+Enables lsp for php.
+#+begin_src emacs-lisp :tangle lisp/web.el
+  (use-package php-mode
+    :ensure t
+    :hook ((php-mode . #'lsp-deferred)))
+#+end_src
+
+* Slime
+#+begin_src emacs-lisp :tangle lisp/slime.el
+  ;; -*- lexical-binding: t; -*-
+  (use-package slime
+    :ensure t
+    :bind (:map slime-mode-map
+  	          ("C-c c" . slime-export-class)
+  	          ("C-c s" . slime-export-structure))
+    :config
+    (setf inferior-lisp-program "sbcl")
+    (slime-setup '(slime-fancy slime-banner slime-company)))
+
+  (use-package slime-company
+    :ensure t
+    :after (slime company)
+    :config
+    (add-to-list 'company-backends 'company-slime)
+    (setq slime-company-completion 'fuzzy
+          slime-company-after-completion 'slime-company-just-one-space))
+#+end_src
+* Org
+#+begin_src emacs-lisp :tangle lisp/org.el
+  ;; -*- lexical-binding: t; -*-
+  (use-package org
+    :ensure t
+    :bind (:map global-map
+                ("C-c l" . #'org-store-link)
+                ("C-c a" . #'org-agenda)
+                ("C-c c" . #'org-capture))
+    :config
+    (setf org-startup-with-inline-images t
+          org-ellipsis "..."
+          org-hide-leading-stars t
+          org-superstar-headline-bullets-list '(?\ )
+          org-indent-indentation-per-level 2
+          org-indent-mode-turns-on-hiding-stars nil
+          org-display-remote-inline-images 'download
+          org-image-actual-width nil
+          org-return-follows-link t)
+    (add-hook 'org-mode-hook
+              (lambda ()
+                (org-superstar-mode 1)
+                (org-indent-mode 1))))
+
+  (defface org-checkbox-todo
+    '((t (:inherit org-checkbox)))
+    "")
+
+  (defface org-checkbox-done
+    '((t (:inherit org-checkbox :foreground "#427b58")))
+    "")
+
+  (font-lock-add-keywords 'org-mode
+                          `((,(rx "[ ]") 0 'org-checkbox-todo prepend)
+                            (,(rx "[X]") 0 'org-checkbox-done prepend)))
+#+end_src
+* Lsp
+#+begin_src emacs-lisp :tangle lisp/lsp.el
+  ;; -*- lexical-binding: t; -*-
+  (use-package lsp-mode
+    :ensure t
+    :config
+    (setf lsp-auto-execute-action nil
+          lsp-ui-doc-delay 0.5
+          lsp-ui-doc-position 'at-point
+          lsp-ui-doc-show-with-cursor nil)
+    (defun toggle-hover ()
+      "Toggle hovering documentation."
+      (interactive)
+      (setf lsp-ui-doc-show-with-cursor (not lsp-ui-doc-show-with-cursor))
+      (lsp-ui-doc-hide))
+    (keymap-set lsp-mode-map "C-M-k" #'toggle-hover))
+
+  (add-hook 'lsp-mode-hook
+            (lambda ()
+              (keymap-set evil-normal-state-map "g D" #'lsp-find-declaration)
+              (keymap-set evil-normal-state-map "g d" #'lsp-find-definition)
+              (keymap-set evil-normal-state-map "g e" #'lsp-treemacs-errors-list)
+              (keymap-set evil-normal-state-map "g i" #'lsp-find-implementation)
+              (keymap-set evil-normal-state-map "g r" #'lsp-rename)
+              (keymap-set evil-normal-state-map "g c" #'lsp-execute-code-action)
+              (keymap-set evil-normal-state-map "g R" #'lsp-find-references)))
+#+end_src
+* Evil
+#+begin_src emacs-lisp :tangle lisp/evil.el
+  ;; -*- lexical-binding: t; -*-
+  (use-package undo-tree
+    :ensure t
+    :config
+    (setf undo-tree-auto-save-history nil)
+    :init
+    (global-undo-tree-mode 1))
+
+
+  (setf evil-want-integration t
+        evil-want-keybinding nil)
+
+  (use-package evil
+    :ensure t
+    :after undo-tree
+    :init (evil-mode 1)
+    :config
+    (dolist (map (list evil-insert-state-map evil-normal-state-map evil-visual-state-map))
+      (keymap-unset map "C-z")
+      (keymap-unset map "C-z") 
+      (keymap-set map "C-z" (make-sparse-keymap)) 
+      (keymap-set map "C-z C-s" #'shell-command-on-region)
+      (keymap-set map "C-z C-f" #'ffap))
+    (keymap-set evil-normal-state-map "g D" #'lsp-find-declaration)
+    (keymap-set evil-normal-state-map "g d" #'lsp-find-definition)
+    (keymap-set evil-normal-state-map "g e" #'lsp-treemacs-errors-list)
+    (keymap-set evil-normal-state-map "g i" #'lsp-find-implementation)
+    (keymap-set evil-normal-state-map "g r" #'lsp-rename)
+    (keymap-set evil-normal-state-map "g c" #'lsp-execute-code-action)
+    (keymap-set evil-normal-state-map "g R" #'lsp-find-references)
+    (evil-set-undo-system 'undo-tree)
+    (keymap-set evil-normal-state-map "C-S-d"
+                (lambda ()
+                  (interactive)
+                  (evil-scroll-up 0)
+                  (evil-scroll-line-to-center nil)))
+    (keymap-set evil-normal-state-map "C-d"
+                (lambda ()
+                  (interactive)
+                  (evil-scroll-down 0)
+                  (evil-scroll-line-to-center nil))))
+
+  (use-package evil-collection
+    :ensure t
+    :after evil
+    :config
+    (evil-collection-init))
+#+end_src
+* Gnus
+#+begin_src emacs-lisp :tangle lisp/gnus.el
+  ;; -*- lexical-binding: t; -*-
+
+  (setf user-mail-address (getenv "MAIL_ADDRESS")
+        user-full-name "luminous99"
+        message-send-mail-function 'smtpmail-send-it
+        smtpmail-default-smtp-server "smtp.gmail.com"
+        calendar-date-style 'european)
+
+  (use-package gnus
+    :ensure t
+    :config
+    (setq gnus-article-sort-functions
+  	    '(gnus-article-sort-by-date
+  	      gnus-article-sort-by-number gnus-article-sort-by-author
+  	      gnus-article-sort-by-subject gnus-article-sort-by-score)
+  	    gnus-select-method '(nnimap "gmail"
+  				                    (nnimap-address "imap.gmail.com")
+  				                    (nnimap-server-port 993)
+  				                    (nnimap-stream ssl)))
+    (gnus-demon-add-handler 'gnus-demon-scan-news 10 10)
+    (gnus-demon-init))
+#+end_src
+* Completion
+#+begin_src emacs-lisp :tangle lisp/completion.el
+  ;; -*- lexical-binding: t; -*-
+  (use-package vertico
+    :ensure t
+    :config
+    (vertico-mode 1))
+
+  (use-package marginalia
+    :ensure t
+    :after vertico
+    :config
+    (marginalia-mode 1))
+
+  (use-package orderless
+    :ensure t
+    :after marginalia
+    :custom
+    (completion-styles '(orderless basic))
+    (completion-category-overrides '((file (styles basic partial-completion)))))
+
+  (use-package company
+    :ensure t
+    :config
+    (global-company-mode 1)
+    (setf company-selection-wrap-around t
+          company-tooltip-idle-delay 0.1)
+    (company-quickhelp-mode 1))
+#+end_src
+* Theme
+#+begin_src emacs-lisp :tangle lisp/theme.el
+  ;; -*- lexical-binding: t; -*-
+  (defun toggle-modus ()
+    "Do `modus-themes-toggle' and possibly restart `org-mode'."
+    (interactive)
+    (modus-themes-toggle)
+    (when (eq major-mode 'org-mode)
+      (org-mode-restart)))
+
+  (use-package modus-themes
+    :ensure t
+    :config
+    (setf modus-themes-common-palette-overrides
+          modus-themes-preset-overrides-warmer)
+    (setf modus-themes-completions
+          '((matches . (extrabold underline))
+            (selection . (bold))))
+    (setf modus-themes-prompts '(ultrabold)
+          modus-themes-to-toggle '(modus-operandi modus-vivendi-tinted))
+    (modus-themes-select 'modus-operandi)
+    (keymap-global-set "<f5>" #'toggle-modus))
+#+end_src
+* Miscellaneous
+** Modes
+Disable unneeded global modes and enable other global modes.
+#+begin_src emacs-lisp :tangle lisp/misc.el
+  ;; -*- lexical-binding: t; -*-
+  (menu-bar-mode 0)
+  (tool-bar-mode 0)
+  (scroll-bar-mode 0)
+  (fringe-mode 0)
+  (show-paren-mode 1)
+  (column-number-mode 1)
+  (line-number-mode 1)
+  (global-display-line-numbers-mode 1)
+#+end_src
+** Multiple cursors
+#+begin_src emacs-lisp :tangle lisp/misc.el
+  (use-package multiple-cursors
+    :ensure t
+    :bind (("C-S-c C-S-c" . mc/edit-lines)
+           ("C->" . mc/mark-next-like-this)
+           ("C-M->" . mc/skip-to-next-like-this)
+           ("C-<" . mc/mark-previous-like-this)
+           ("C-M-<" . mc/skip-to-previous-like-this)
+           ("C-c C-<" . mc/mark-all-like-this))
+    :config
+    (setf mc/always-run-for-all t)
+    (add-hook 'prog-mode-hook (lambda (&rest args) (multiple-cursors-mode 1))))
+#+end_src
+** C/C++
+#+begin_src emacs-lisp :tangle lisp/misc.el
+  (add-hook 'c-mode-hook (lambda ()
+  			             (c-toggle-electric-state 1)
+  			             (c-toggle-comment-style -1)
+  			             (c-toggle-cpp-indent-to-body 1)
+  			             (c-set-style "stroustrup")))
+
+  (add-hook 'c-mode-hook #'lsp)
+  (add-hook 'c++-mode-hook #'lsp)
+#+end_src
+** Emms
+#+begin_src emacs-lisp :tangle lisp/misc.el
+  (use-package emms
+    :ensure t
+    :config
+    (emms-all)
+    (emms-mpris-enable)
+    (setf emms-browser-covers #'emms-browser-cache-thumbnail-async
+          emms-browser-thumbnail-small-size 128
+          emms-browser-thumbnail-medium-size 256
+          emms-browser-thumbnail-large-size 512
+          emms-source-playlist-default-format 'm3u
+          emms-source-file-default-directory "~/Music/"
+          emms-player-list (list emms-player-mpv)))
+#+end_src
+** Which key
+#+begin_src emacs-lisp :tangle lisp/misc.el
+  (use-package which-key
+    :ensure t
+    :config
+    (which-key-mode 1))
+#+end_src
+** Docker
+#+begin_src emacs-lisp :tangle lisp/misc.el
+  (use-package docker
+    :ensure t
+    :config
+    (keymap-global-set "C-c d" #'docker))
+#+end_src
+** Replace execute-extended-command
+#+begin_src emacs-lisp :tangle lisp/misc.el
+
+  (defun execute-and-save ()
+    "Runs `execute-extended-command' and based on the prefix argument
+  save it's output from *Messages* to the `kill-ring'."
+    (interactive)
+    (execute-extended-command current-prefix-arg)
+    (when current-prefix-arg
+      (with-current-buffer "*Messages*"
+        (save-excursion
+          (forward-line (1- (car (buffer-line-statistics))))
+          (kill-new (thing-at-point 'line))
+          (setf (car kill-ring) (string-trim (car kill-ring)))))))
+
+  (keymap-global-set "M-x" #'execute-and-save)
+#+end_src
+** Dired
+#+begin_src emacs-lisp :tangle lisp/misc.el
+  (setf dired-dwim-target #'dired-dwim-target-next-visible
+        dired-create-destination-dirs 'always
+        dired-listing-switches "-alh" 
+        dired-mouse-drag-files t
+        dired-auto-revert-buffer #'dired-directory-changed-p)
+  (keymap-global-set "C-x C-d" #'dired)
+  (keymap-global-set "C-x d" #'list-directory)
+  (keymap-global-set "s-d" #'ispell-change-dictionary)
+#+end_src
+
+** Remainder
+#+begin_src emacs-lisp :tangle lisp/misc.el
+  (set-face-attribute 'default nil :family "0xProto Nerd Font" :height 120)
+  (add-hook 'prog-mode-hook (lambda () (setf tab-width 4 indent-tabs-mode nil)))
+
+  (setf display-line-numbers-type 'relative
+        frame-resize-pixelwise t
+        warning-minimum-level :error
+        inhibit-startup-screen t
+        backup-directory-alist `((".*" . ,temporary-file-directory))
+        auto-save-file-name-transforms `((".*" ,temporary-file-directory t))
+        browse-url-browser-function '(("hyperspec" . eww-browse-url)
+  				                    ("." . browse-url-default-browser))
+        treesit-font-lock-level 4)
+
+  (async-bytecomp-package-mode 1)
+
+  (add-hook 'python-mode-hook #'lsp)
+  (add-hook 'lisp-mode-hook (lambda () (paredit-mode 1)))
+  (add-hook 'emacs-lisp-mode-hook (lambda () (paredit-mode 1)))
+  (add-hook 'slime-repl-mode-hook (lambda () (paredit-mode 1)))
+
+  (dotimes (tab 10)
+    (keymap-global-set (format "C-%d" tab) (lambda ()
+                                             (interactive)
+                                             (tab-bar-select-tab tab))))
+#+end_src
