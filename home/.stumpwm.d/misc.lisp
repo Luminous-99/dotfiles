@@ -9,13 +9,13 @@
    #:run-program
    #:run-programs
    #:run-formatted
-   #:xmodmap
+   #:x-setup
    #:*font*
    #:*foreground-color*
    #:*background-color*
    #:rgb-string->integer
    #:integer->rgb-string
-   #:swank
+   #:run-swank
    #:auto-start
    #:screenshot))
 
@@ -59,16 +59,17 @@
 (set-float-focus-color "#555555")
 (set-float-unfocus-color *background-color*)
 
-(defcommand xmodmap () ()
+(defcommand x-setup () ()
   "Set up SUPER and HYPER"
   (run-shell-command "xmodmap -e \"clear mod4\"" t)
   ;; change Left Windows key to F20 key
   (run-shell-command "xmodmap -e \"keycode 133 = F20\"" t)
   ;; change Menu key to Hyper key
   (run-shell-command "xmodmap -e \"keycode 135 = Hyper_R\"" t)
+  (run-shell-command "xsetroot -cursor_name left_ptr" t)
   (set-prefix-key (kbd "F20")))
 
-(xmodmap)
+(x-setup)
 
 (defun window-exists? (class)
   (let ((windows (group-windows (current-group))))

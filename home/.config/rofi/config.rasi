@@ -1,6 +1,6 @@
 configuration {
 /*	modi: "window,run,ssh";*/
-	font: "0xProto 12";
+	font: "0xProto Nerd Font 12";
 /*	location: 0;*/
 /*	yoffset: 0;*/
 /*	xoffset: 0;*/
@@ -69,7 +69,7 @@ configuration {
 window {
     padding:          5;
     background-color: var(background);
-    border:           1;
+    border:           3px;
 }
 mainbox {
     padding: 5;

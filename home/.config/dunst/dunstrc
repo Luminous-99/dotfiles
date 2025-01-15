@@ -62,10 +62,10 @@
     ignore_newline = no
     
     width  = (40,250)
-    height = (80,140)
+    height = (80,280)
     notification_limit = 5
     origin = bottom-right
-    offset = 30x20
+    offset = (30,20)
     enable_recursive_icon_lookup = true
     icon_theme = "Adwaita"
 

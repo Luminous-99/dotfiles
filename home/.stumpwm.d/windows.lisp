@@ -30,42 +30,41 @@
   (xlib:change-property (window-xwin window) property (list value) :integer 32))
 
 (defun set-floating (window floating)
-  (cond 
-    ((eq floating nil)
+  (if floating 
+    (progn
+     (stumpwm::float-window window (current-group))
+     (set-window-property window :_STUMPWM_FLOATING 1))
+    (progn
      (when (stumpwm::float-window-p window)
        (stumpwm::unfloat-window window (current-group))
-       (set-window-property window :_STUMPWM_FLOATING 0)))
-    ((eq floating t)
-     (stumpwm::float-window window (current-group))
-     (set-window-property window :_STUMPWM_FLOATING 1))))
+       (set-window-property window :_STUMPWM_FLOATING 0)))))
 
-(defun sort-current-group (window)
+(defun sort-current-group (&optional window)
   "Sort windows on destruction."
   (declare (ignorable window))
   (let* ((windows (stumpwm::list-windows (current-group)))
          (windows (sort windows (lambda (x y)
-                                  (when y 
-                                    (< (window-number x)
-                                       (window-number y)))))))
+                                  (< (window-number x)
+                                     (window-number y))))))
     (loop for (win1 win2) on windows
           for num1 = (and win1 (window-number win1))
           for num2 = (and win2 (window-number win2))
-          when (and num2 (> num2 (1+ num1))) 
-            do (setf win2 (1+ num1)))))
+          when (and num2 (< (1+ num1) num2)) 
+            do (setf (window-number win2) (1+ num1)))))
 
 (setf *destroy-window-hook* (list #'sort-current-group))
 
 (defun float-unless-maximized (window)
   (unless swm-gaps:*gaps-on* 
-      (when-let* ((screen (current-screen))
-                  (mode-line (car (stumpwm::screen-mode-lines (current-screen))))
-                  (maximized-width (screen-width screen))
-                  (maximized-height (- (screen-height screen) (stumpwm::mode-line-height mode-line))))
-        (let ((width (window-width window))
-              (height (window-height window)))
-          (when (or (< width maximized-width) (< height maximized-height))
-            (set-floating window t)
-            (focus-window window t))))))
+    (when-let* ((screen (current-screen))
+                (mode-line (car (stumpwm::screen-mode-lines (current-screen))))
+                (maximized-width (screen-width screen))
+                (maximized-height (- (screen-height screen) (stumpwm::mode-line-height mode-line))))
+      (let ((width (window-width window))
+            (height (window-height window)))
+        (when (or (< width maximized-width) (< height maximized-height))
+          (set-floating window t)
+          (focus-window window t))))))
 
 (setf *new-window-hook* (list #'float-unless-maximized))
 

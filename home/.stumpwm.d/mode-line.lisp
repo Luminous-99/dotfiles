@@ -44,7 +44,7 @@ CAR is either any value returned by decode-button-code or T for any unspecified 
 (defclick lisp-icon ()
   (:left-button
    (message "^(:font 1)( ^(:fg \"#4d4d4d\") Stump^**^(:fg \"#ff7f2a\")WM^**)")
-   (xmodmap))
+   (x-setup))
   (:middle-button
    (when (stumpwm::yes-or-no-p (format nil "Do you want to shutdown?~%"))
      (when (stumpwm::yes-or-no-p (format nil "Are you sure?~%"))
