@@ -1,5 +1,5 @@
 #+AUTHOR: luminous99
-#+STARTUP: fold
+#+STARTUP: fold hideblocks
 
 * Init
 ** Load configuration files
@@ -13,7 +13,7 @@
   (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
   (package-initialize)
 
-  (setf files-to-load '(misc theme completion gnus evil lsp org slime web prettify project)
+  (setf files-to-load '(misc theme completion gnus evil lsp org slime web prettify projects)
         configuration-path (expand-file-name "~/.emacs.d/lisp/"))
 
   (defun load-config (name)
@@ -121,8 +121,8 @@ Setup Lsp, highlighting and other basic features for typescript and javascript.
     (use-package tide
       :ensure t
       :after (company flycheck)
-      :hook ((typescript-ts-mode . #'setup)
-             (tsx-ts-mode . #'setup))))
+      (add-hook 'typescript-ts-mode-hook #'setup)
+      (add-hook 'tsx-ts-mode-hook #'setup)))
 #+end_src
 
 ** HTML/CSS
@@ -132,32 +132,24 @@ Enables Emmet and Web mode.
               (setf web-mode-markup-indent-offset 4
                     web-mode-code-indent-offset 4
                     web-mode-css-indent-offset 4) 
+              (lsp-deferred)
               (emmet-mode 1)))
     (use-package web-mode
       :ensure t
-      :hook ((web-mode . #'setup))
       :config
+      (add-hook 'web-mode-hook #'setup)
+      (setf web-mode-engines-alist '(("php" . "\\.php\\'")))
       (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
-      (add-to-list 'auto-mode-alist '("\\.blade\\.php\\'" . web-mode))
       (add-to-list 'auto-mode-alist '("\\.php\\'" . web-mode))))
 #+end_src
-
-** PHP
-Enables lsp for php.
-#+begin_src emacs-lisp :tangle lisp/web.el
-  (use-package php-mode
-    :ensure t
-    :hook ((php-mode . #'lsp-deferred)))
-#+end_src
-
 * Slime
 #+begin_src emacs-lisp :tangle lisp/slime.el
   ;; -*- lexical-binding: t; -*-
   (use-package slime
     :ensure t
     :bind (:map slime-mode-map
-  	          ("C-c c" . slime-export-class)
-  	          ("C-c s" . slime-export-structure))
+                ("C-c c" . slime-export-class)
+                ("C-c s" . slime-export-structure))
     :config
     (setf inferior-lisp-program "sbcl")
     (slime-setup '(slime-fancy slime-banner slime-company)))
@@ -452,7 +444,6 @@ Disable unneeded global modes and enable other global modes.
   (keymap-global-set "C-x d" #'list-directory)
   (keymap-global-set "s-d" #'ispell-change-dictionary)
 #+end_src
-
 ** Remainder
 #+begin_src emacs-lisp :tangle lisp/misc.el
   (set-face-attribute 'default nil :family "0xProto Nerd Font" :height 120)
