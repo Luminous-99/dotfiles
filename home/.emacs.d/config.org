@@ -25,7 +25,7 @@
 ** Thing that don't deserve their own file
 #+begin_src emacs-lisp :tangle init.el
   (defun replace-defun ()
-    "Evalute current Defun, then replace it with it's return value."
+    "Evaluate current Defun, then replace it with it's return value."
     (interactive)
     (let* ((region (bounds-of-thing-at-point 'sexp))
            (string (buffer-substring-no-properties (car region) (cdr region))))
