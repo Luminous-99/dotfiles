@@ -42,10 +42,11 @@
 (defun sort-current-group (&optional window)
   "Sort windows on destruction."
   (declare (ignorable window))
-  (let* ((windows (stumpwm::list-windows (current-group)))
-         (windows (sort windows (lambda (x y)
-                                  (< (window-number x)
-                                     (window-number y))))))
+  (let* ((windows (group-windows (current-group)))
+         (windows (sort (copy-list windows)
+                        (lambda (x y)
+                          (< (window-number x)
+                             (window-number y))))))
     (loop for (win1 win2) on windows
           for num1 = (and win1 (window-number win1))
           for num2 = (and win2 (window-number win2))
