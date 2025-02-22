@@ -51,7 +51,7 @@
 (defun toggle-application-mute (class)
   "Toggle whether an application is muted."
   (let* ((applications (get-pactl-applications)))
-    (run-formatted "pactl set-sink-input-volume ~a ~a%" (cdr (assoc (string-downcase class) applications :test #'string=)))))
+    (run-formatted "pactl set-sink-input-mute ~a toggle" (cdr (assoc (string-downcase class) applications :test #'string=)))))
 
 (defcommand set-volume-from-menu () ()
   (when-let* ((window (stumpwm::select-window-from-menu (list-all-windows) "%c" "App:"))
@@ -60,18 +60,23 @@
     (set-application-volume class (parse-integer volume)))
   (values))
 
+(defcommand toggle-mute-from-menu () ()
+  (when-let* ((window (stumpwm::select-window-from-menu (list-all-windows) "%c" "App to mute:"))
+              (class (window-class window)))
+    (toggle-application-mute class))
+  (values))
+
 (define-keys *top-map*
   ("XF86AudioRaiseVolume" . "volume-up")
   ("XF86AudioLowerVolume" . "volume-down")
   ("XF86AudioMute" . "volume-mute"))
-
 
 ;; Music
 (defparameter *player* "spotify")
 (defparameter *track* "  Paused  ")
 
 (defun current-track ()
-  (let ((fmt "playerctl --player=~a metadata --format \"{{trunc(artist,15)}} - {{trunc(title,16)}}\"" )
+  (let ((fmt "playerctl --player=~a metadata --format \"{{trunc(artist,18)}} - {{trunc(title,16)}}\"" )
         (playing (string= "Playing" (run-formatted "playerctl --player=~a status" *player*))))
     (if playing
         (format nil "^(:fg \"#8f0075\") ^* ~a ^(:fg \"#8f0075\") ^*" (run-formatted fmt *player*))
@@ -107,6 +112,7 @@
   ("M-t" . "toggle-track")
   ("M-n" . "next-track")
   ("M-v" . "set-volume-from-menu")
+  ("M-m" . "toggle-mute-from-menu")
   ("M-p". "previous-track"))
 (define-keys *top-map*
   ("XF86AudioNext" . "next-track")
