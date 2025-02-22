@@ -213,13 +213,13 @@ Enables Emmet and Web mode.
             lsp-ui-doc-delay 0.5
             lsp-ui-doc-position 'at-point
             lsp-ui-doc-show-with-cursor nil)
-      (keymap-set lsp-mode-map "g D" #'lsp-find-declaration)
-      (keymap-set lsp-mode-map "g d" #'lsp-find-definition)
-      (keymap-set lsp-mode-map "g e" #'lsp-treemacs-errors-list)
-      (keymap-set lsp-mode-map "g i" #'lsp-find-implementation)
-      (keymap-set lsp-mode-map "g r" #'lsp-rename)
-      (keymap-set lsp-mode-map "g c" #'lsp-execute-code-action)
-      (keymap-set lsp-mode-map "g R" #'lsp-find-references)
+      (keymap-set lsp-mode-map "s-D" #'lsp-find-declaration)
+      (keymap-set lsp-mode-map "s-d" #'lsp-find-definition)
+      (keymap-set lsp-mode-map "s-e" #'lsp-treemacs-errors-list)
+      (keymap-set lsp-mode-map "s-i" #'lsp-find-implementation)
+      (keymap-set lsp-mode-map "s-R" #'lsp-rename)
+      (keymap-set lsp-mode-map "s-c" #'lsp-execute-code-action)
+      (keymap-set lsp-mode-map "s-r" #'lsp-find-references)
       (keymap-set lsp-mode-map "C-M-k" #'toggle-hover)))
 #+end_src
 * Evil
@@ -299,6 +299,7 @@ Enables Emmet and Web mode.
 * Completion
 #+begin_src emacs-lisp :tangle lisp/completion.el
   ;; -*- lexical-binding: t; -*-
+
   (use-package vertico
     :ensure t
     :config
@@ -324,6 +325,18 @@ Enables Emmet and Web mode.
     (setf company-selection-wrap-around t
           company-tooltip-idle-delay 0.1)
     (company-quickhelp-mode 1))
+
+  (cl-flet ((append-yasnippet (backend)
+              (if (atom backend)
+                  `(,backend :with company-yasnippet)
+                   backend)))
+    (use-package yasnippet
+      :ensure t
+      :after (company)
+      :config
+      (yas-global-mode 1)
+      (keymap-set company-mode-map "s-<tab>" #'yas-expand)
+      (setf company-backends (mapcar #'append-yasnippet company-backends))))
 #+end_src
 * Theme
 #+begin_src emacs-lisp :tangle lisp/theme.el
