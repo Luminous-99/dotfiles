@@ -94,14 +94,59 @@
                                  :ignore-error-status t)))
 
 (defmacro define-keys (map &body keys)
-  `(dolist (key ',keys)
-     (undefine-key ,map (kbd (car key)))
-     (define-key ,map (kbd (car key))
-       (cdr key))))
+  `(dolist (key (list ,@(mapcar (lambda (key)
+                                  (let ((result (car key)))
+                                    (if (stringp result)
+                                        `(cons (kbd ,result) ,(cdr key))
+                                        key)))
+                                keys)))
+     (undefine-key ,map (car key))
+     (define-key ,map (car key) (cdr key))))
 
 (defmacro undefine-keys (map &body keys)
-  `(dolist (key ',keys)
-     (undefine-key ,map (kbd key))))
+  `(dolist (key (list ,@(mapcar (lambda (key)
+                                  (if (stringp key)
+                                      `(kbd ,key)
+                                      key))
+                                keys)))
+     (undefine-key ,map key)))
+
+(dolist (kmap `(,@(stumpwm::top-maps) *root-map* stumpwm::*tile-group-root-map* stumpwm::*group-root-map*))
+  (undefine-keys (eval kmap)
+    "a"
+    "C-a"
+    (stumpwm::make-key :keysym -1)
+    "C-e"
+    "C-c"
+    "C-m"
+    "C-n"
+    "C-p"
+    "SPC"
+    "C-SPC"
+    "C-k"
+    "K"
+    "C-l"
+    "C-w"
+    "C-RET"))
+
+(dolist (kmap (list stumpwm::*tile-group-root-map* stumpwm::*group-root-map*))
+  (undefine-keys kmap
+    "Up"
+    "Down"
+    "Left"
+    "Right"
+    "o"
+    "s"
+    "S"
+    "X" 
+    "M-TAB"
+    "M-Up"
+    "M-Down"
+    "M-Left"
+    "M-Right"))
+
+;; Potential simplification
+;; (remove-duplicates (stumpwm::kmap-bindings *root-map*) :test #'equalp :key #'stumpwm::binding-command)
 
 ;; Brightness
 (defcommand brightness-up () ()
