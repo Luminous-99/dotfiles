@@ -6,8 +6,21 @@
    #:float-unless-maximized
    #:sort-current-group
    #:set-floating
-   #:set-window-property
-   #:list-all-windows))
+   #:list-all-windows
+   #:float-move-resize
+   #:*resizing-mode*
+   #:*resize-increment*
+   #:float-resize
+   #:float-move
+   #:move
+   #:iresize-float
+   #:close-window-and-frame
+   #:terminate-this
+   #:toggle-float
+   #:delete-split
+   #:split-horizontal
+   #:split-vertical
+   #:clear-messages))
 
 (in-package :windows)
 
@@ -22,22 +35,24 @@
       *normal-border-width* 0
       *transient-border-width* 0
       *message-window-padding* 5
-      *message-window-y-padding* 5
-      swm-gaps:*outer-gaps-size* 5
-      swm-gaps:*inner-gaps-size* 5)
+      *message-window-y-padding* 5)
 
-(defun set-window-property (window property value)
-  (xlib:change-property (window-xwin window) property (list value) :integer 32))
+(defun (setf stumpwm::window-property) (value window property)
+  (multiple-value-bind (value type format)
+      (etypecase value
+        (integer (values (list value) :integer 32))
+        (string (values (map 'vector #'char-code value) :string 8))
+        (symbol (values (map 'vector #'char-code (symbol-name value)) :string 8)))
+    (xlib:change-property (window-xwin window) property value type format)))
 
 (defun set-floating (window floating)
   (if floating 
-    (progn
-     (stumpwm::float-window window (current-group))
-     (set-window-property window :_STUMPWM_FLOATING 1))
-    (progn
-     (when (stumpwm::float-window-p window)
-       (stumpwm::unfloat-window window (current-group))
-       (set-window-property window :_STUMPWM_FLOATING 0)))))
+      (progn
+        (stumpwm::float-window window (current-group))
+        (setf (stumpwm::window-property window :_STUMPWM_FLOATING) 1))
+      (when (stumpwm::float-window-p window)
+        (stumpwm::unfloat-window window (current-group))
+        (setf (stumpwm::window-property window :_STUMPWM_FLOATING) 0))))
 
 (defun sort-current-group (&optional window)
   "Sort windows on destruction."
@@ -48,10 +63,13 @@
                           (< (window-number x)
                              (window-number y))))))
     (loop for (win1 win2) on windows
-          for num1 = (and win1 (window-number win1))
+          for num1 = (window-number win1)
           for num2 = (and win2 (window-number win2))
-          when (and num2 (< (1+ num1) num2)) 
-            do (setf (window-number win2) (1+ num1)))))
+          unless num2
+            return (values)
+          when (< (1+ num1) num2) 
+            do (setf (window-number win2) (1+ num1))))
+  (stumpwm::update-all-mode-lines))
 
 (setf *destroy-window-hook* (list #'sort-current-group))
 
@@ -125,11 +143,10 @@
     (kill-window window)
     (toggle-gaps)))
 
-(defcommand toggle-float () ()
-  (let ((window (current-window)))
-    (if (stumpwm::float-window-p window)
-        (set-floating window nil)
-        (set-floating window t))))
+(defcommand toggle-float (&optional (window (current-window))) ()
+  (if (stumpwm::float-window-p window)
+      (set-floating window nil)
+      (set-floating window t)))
 
 (defun list-all-windows ()
   (apply #'append
@@ -160,8 +177,6 @@
   ("s" . "split-vertical")
   ("S" . "split-horizontal")
   ("k" . "terminate-this")
-  ("C-k" . "terminate-this")
-  ("K" . "terminate-this")
   ("Up" . "move up")
   ("Left" . "move left")
   ("Right" . "move right")
