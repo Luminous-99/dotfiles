@@ -118,17 +118,37 @@
   ("XF86MonBrightnessDown" . "brightness-down"))
 
 ;; Programs
+(defcommand alacritty () ()
+  (run-shell-command "alacritty"))
+
+(defcommand dmenu () ()
+  (run-shell-command (format nil "dmenu_run -fn 0xProto -nb ~S -nf ~S" *background-color* *foreground-color*)))
+
+(defcommand app-selector () ()
+  (run-shell-command  "rofi -show drun"))
+
+(defcommand file-selector () ()
+  (run-shell-command  "rofi -show recursivebrowser"))
+
+(define-keys *root-map*
+  ("d" . "dmenu")
+  ("D" . "app-selector")
+  ("M-d" . "file-selector")
+  ("c" . "alacritty"))
+
 (defcommand screenshot () ()
   (run-shell-command "flameshot gui"))
 
-(define-keys *root-map*
-  ("d" . "exec dmenu_run -fn 0xProto -nb \"#f2f2f2\" -nf \"#333333\"")
-  ("D" . "exec rofi -show drun")
-  ("M-d" . "exec rofi -show recursivebrowser"))
+(defcommand mail (&optional (to "") (subject "")) ((:string "To: ") (:string "Subject: "))
+  (let* ((sexp (format nil "(compose-mail \\\"~a\\\" \\\"~a\\\")" to subject))
+         (sexp (format nil "(progn ~a (raise-frame))" sexp))
+         (cmd (format nil "emacsclient --eval \"~a\"" sexp)))
+    (run-shell-command cmd)))
 
 (define-keys *top-map*
   ("Print" . "screenshot")
-  ("XF86Mail" . "exec emacsclient --eval \"(progn (mail) (raise-frame))\""))
+  ("XF86Mail" . "mail \"\" \"\"")
+  ("C-XF86Mail" . "mail"))
 
 (defparameter *startup-programs* '(("kdeconnectd" . "")
                                    ("emacsclient" . "--alternate-editor= -c")
