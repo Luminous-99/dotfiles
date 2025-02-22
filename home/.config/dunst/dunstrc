@@ -6,7 +6,7 @@
     
     font = 0xProto Nerd Font 12
     corner_radius = 10
-    progress_bar_corner_radius = 10
+    progress_bar_corner_radius = 5
     icon_corner_radius = 10
     
     # Allow a small subset of html markup:
@@ -56,13 +56,14 @@
     
     # Split notifications into multiple lines if they don't fit into
     # geometry.
-    word_wrap = yes
+    word_wrap = false
+    ellipsize=end
     
     # Ignore newlines '\n' in notifications.
     ignore_newline = no
     
-    width  = (40,250)
-    height = (80,280)
+    width  = (40,300)
+    height = (40,250)
     notification_limit = 5
     origin = bottom-right
     offset = (30,20)
