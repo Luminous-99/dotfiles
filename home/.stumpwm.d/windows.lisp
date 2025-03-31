@@ -1,7 +1,12 @@
 (defpackage windows
   (:use :cl :stumpwm :misc :contrib)
   (:import-from :alexandria
-                #:when-let*)
+                #:when-let*
+                #:when-let)
+  (:import-from :stumpwm
+                #:find-group
+                #:switch-to-group
+                #:if-let)
   (:export
    #:float-unless-maximized
    #:sort-current-group
@@ -46,7 +51,7 @@
     (xlib:change-property (window-xwin window) property value type format)))
 
 (defun set-floating (window floating)
-  (if floating 
+  (if floating
       (progn
         (stumpwm::float-window window (current-group))
         (setf (stumpwm::window-property window :_STUMPWM_FLOATING) 1))
@@ -67,14 +72,14 @@
           for num2 = (and win2 (window-number win2))
           unless num2
             return (values)
-          when (< (1+ num1) num2) 
+          when (< (1+ num1) num2)
             do (setf (window-number win2) (1+ num1))))
   (stumpwm::update-all-mode-lines))
 
 (setf *destroy-window-hook* (list #'sort-current-group))
 
 (defun float-unless-maximized (window)
-  (unless swm-gaps:*gaps-on* 
+  (unless swm-gaps:*gaps-on*
     (when-let* ((screen (current-screen))
                 (mode-line (car (stumpwm::screen-mode-lines (current-screen))))
                 (maximized-width (screen-width screen))
@@ -92,13 +97,13 @@
 
 (defun float-move-resize (window &key x y width height)
   (stumpwm::float-window-move-resize window
-                                     :x (if x x (window-x window))
-                                     :y (if y y (window-y window))
-                                     :width (if width width (window-width window))
-                                     :height (if height height (window-height window))))
+                            :x (or x (window-x window))
+                            :y (or y (window-y window))
+                            :width (or width (window-width window))
+                            :height (or height (window-height window))))
 
 (defun float-resize (window dir)
-  (with-slots (width height) window
+  (with-accessors ((width window-width) (height window-height)) window
     (case dir
       (:up (float-move-resize window :height (- height *resize-increment*)))
       (:left (float-move-resize window :width (- width *resize-increment*)))

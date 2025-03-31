@@ -21,12 +21,15 @@
 
 (in-package :misc)
 
+(setf *altgr-offset* 4)
+(register-altgr-as-modifier)
+
 (defvar *swank-running* nil)
 (defcommand run-swank () ()
   (unless *swank-running*
     (swank:create-server :port 4005
-                   :style swank:*communication-style*
-                   :dont-close t)
+                         :style swank:*communication-style*
+                         :dont-close t)
     (echo-string (current-screen) "Starting swank. Do \"M-x slime-connect.\"")
     (setf *swank-running* t)))
 
@@ -37,12 +40,14 @@
 ;; -misc-0xproto nerd font-medium-r-normal--12-120-100-100-p-0-iso8859-16
 ;; (set-font "-misc-0xproto nerd font-medium-r-normal--17-110-110-110-p-0-iso8859-16")
 ;; -------------------------
+
 (load-module "ttf-fonts")
 (defparameter *font*
   (make-instance 'xft:font
                  :family "0xProto Nerd Font"
                  :subfamily "Regular"
-                 :size 12))
+                 :size 12
+                 :antialias t))
 
 (set-font *font*)
 
@@ -74,7 +79,7 @@
 (defun window-exists? (class)
   (let ((windows (group-windows (current-group))))
     (loop for window in windows
-          when (stumpwm::classed-p window class)
+          when (eq (window-class window) class)
             return t)))
 
 (defun run-program (command &optional (class nil))
@@ -179,7 +184,8 @@
   ("d" . "dmenu")
   ("D" . "app-selector")
   ("M-d" . "file-selector")
-  ("c" . "alacritty"))
+  ("c" . "alacritty")
+  ("t" . "alacritty"))
 
 (defcommand screenshot () ()
   (run-shell-command "flameshot gui"))
@@ -195,15 +201,15 @@
   ("XF86Mail" . "mail \"\" \"\"")
   ("C-XF86Mail" . "mail"))
 
-(defparameter *startup-programs* '(("kdeconnectd" . "")
-                                   ("emacsclient" . "--alternate-editor= -c")
+(defparameter *startup-programs* '(("emacsclient" . "--alternate-editor= -c")
                                    ("firefox" . "")
                                    ("vesktop" . "")
                                    ("steam" . "-silent")))
 
 (run-programs '(("picom" . "-b --vsync -f")
                 ("dunst" . "-conf ~/.config/dunst/dunstrc")
-                ("feh" . "--no-fehbg --bg-scale ~/dotfiles/Background/The_Garden_of_earthly_delights_Reduced.jpg")))
+                ("feh" . "--no-fehbg --bg-scale ~/dotfiles/Background/The_Garden_of_earthly_delights_Reduced.jpg")
+                ("kdeconnectd" . "")))
 
 (defcommand auto-start () ()
   (run-programs *startup-programs*))

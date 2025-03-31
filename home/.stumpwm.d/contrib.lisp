@@ -13,6 +13,6 @@
       swm-gaps:*inner-gaps-size* 3)
 
 (defun toggle-gaps ()
-  (if (null (cdr (stumpwm::group-frames (current-group))))
-      (swm-gaps:toggle-gaps-off)
-      (swm-gaps:toggle-gaps-on)))
+  (if (cdr (stumpwm::group-frames (current-group)))
+      (swm-gaps:toggle-gaps-on)
+      (swm-gaps:toggle-gaps-off)))

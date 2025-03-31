@@ -19,11 +19,24 @@ else
     curl -o "$icon_file" -L "$url"
 fi
 
+function truncate () {
+    string="$1"
+    count="$2"
+    truncated_string="$(echo "$string" | head -c $count)"
+    if [ "$truncated_string" != "$string" ]; then
+        truncated_string="$truncated_string..."
+    fi
+    echo $truncated_string;
+}
+
 if [ -z "$2" ]; then
     if [ -z "$album" ]; then
-	dunstify --icon "$icon_file" "$title" "$artist"
+        dunstify --icon "$icon_file" "$artist" "$title"
     else
-	dunstify --icon "$icon_file" "$title" "$artist - $album"
+        album=$(truncate "$album" 30)
+        title=$(truncate "$title" 30)
+        artist=$(truncate "$artist" 30)
+        dunstify --icon "$icon_file" "$album" "$artist - $title"
     fi
 else
     dunstify --icon "$icon_file" "$title" "$2"
