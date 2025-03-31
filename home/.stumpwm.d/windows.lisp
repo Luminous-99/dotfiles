@@ -25,7 +25,8 @@
    #:delete-split
    #:split-horizontal
    #:split-vertical
-   #:clear-messages))
+   #:clear-messages
+   #:*window-preferences*))
 
 (in-package :windows)
 
@@ -193,6 +194,66 @@
   ("M-Down" . "exchange-direction down"))
 
 ;; Groups
+(setf (group-name (find-group (current-screen) "Default")) "Group 1")
+
+(defvar *window-preferences* ()
+  "A list of plists that define window preferences.")
+
+(defun define-window-preference (&key class window-number group-name group-number)
+  (let ((preference (list :class class
+                          :window-number window-number
+                          :group-name group-name
+                          :group-number group-number)))
+    (let ((old-preference  (find class *window-preferences*
+                                 :test (lambda (x y)
+                                         (string= x (getf y :class))))))
+      (if old-preference
+          (setf (cdr old-preference) (cdr preference))
+          (push preference *window-preferences*)))))
+
+(defmacro define-window-preferences (&body preferences)
+  (let ((preference (gensym "PREFERENCE")))
+    `(dolist (,preference ',preferences)
+       (apply #'define-window-preference ,preference))))
+
+(defun preference-matches-p (window preference)
+  (when (string= (window-class window) (getf preference :class))
+    preference))
+
+(defun place-windows (&optional (screen (current-screen)))
+  "Place windows according to *WINDOW-PREFERENCES*."
+  (dolist (window (screen-windows screen))
+    (when-let ((preference (some (lambda (preference)
+                                   (preference-matches-p window preference))
+                                 *window-preferences*)))
+      (destructuring-bind (&key class window-number group-name group-number)
+          preference
+        (declare (ignorable class))
+        (when window-number
+          (if-let ((old-window (find window-number (group-windows (window-group window))
+                                     :key #'window-number :test #'=)))
+            (setf (window-number old-window) (window-number window)
+                  (window-number window) window-number)
+            (setf (window-number window) window-number)))
+        (cond
+          ((and group-name (not (string= group-name (group-name (window-group window)))))
+           (move-window-to-group window (find-group screen group-name)))
+          ((and group-number (not (= group-number (group-number (window-group window)))))
+           (let ((group (find group-number (screen-groups screen)
+                              :test #'= :key #'group-number)))
+             (move-window-to-group window group))))))))
+
+(defcommand place-all-windows (&optional (screen (current-screen))) ()
+  (place-windows screen))
+
+(define-window-preferences
+  (:class "Emacs" :window-number 0 :group-name "Group 1")
+  (:class "firefox" :window-number 1 :group-name "Group 1")
+  (:class "vesktop" :window-number 0 :group-name "Group 2")
+  (:class "Spotify" :window-number 1 :group-name "Group 2"))
+
+(define-key *root-map* (kbd "W") "place-all-windows")
+
 (dotimes (i 9)
   (define-key *root-map* (kbd (format nil "M-~a" (1+ i)))
     (format nil "gmove ~a" (1+ i))))
