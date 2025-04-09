@@ -171,6 +171,13 @@
   (vsplit)
   (toggle-gaps))
 
+(defcommand renumber-to-next () ()
+  (renumber (1+ (window-number (current-window)))))
+
+(defcommand renumber-to-previous () ()
+  (let ((number (window-number (current-window))))
+    (renumber (if (zerop number) number (1- number)))))
+
 (defcommand clear-messages () ()
   (stumpwm::unmap-message-window (current-screen)))
 
@@ -183,6 +190,8 @@
   ("s" . "split-vertical")
   ("S" . "split-horizontal")
   ("k" . "terminate-this")
+  ("C-n" . "renumber-to-next")
+  ("C-p" . "renumber-to-previous")
   ("Up" . "move up")
   ("Left" . "move left")
   ("Right" . "move right")

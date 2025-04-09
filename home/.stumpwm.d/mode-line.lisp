@@ -5,7 +5,8 @@
                 #:decode-button-code
                 #:window-by-id
                 #:find-group
-                #:switch-to-group))
+                #:switch-to-group
+                #:update-all-mode-lines))
 
 (in-package :mode-line)
 
@@ -25,23 +26,35 @@
 (defmacro defclick (name (&rest arguments) &body body)
   "Define an on click function for the modeline. BODY is a list of lists where
 CAR is either any value returned by decode-button-code or T for any unspecified match."
-  `(progn
-     (defun ,name (code ,@arguments)
-       (declare (ignorable code))
-       (case (decode-button-code code)
-         ,@body))
-     (register-ml-on-click-id ,(make-keyword name) #',name)))
+  (let* ((after (assoc :after body))
+         (before (assoc :before body))
+         (body (remove after (remove before body))))
+    `(progn
+       (defun ,name (code ,@arguments)
+         (declare (ignorable code))
+         ,@(cdr before)
+         (case (decode-button-code code)
+           ,@body)
+         ,@(cdr after))
+       (register-ml-on-click-id ,(make-keyword name) #',name))))
+
+(defmacro with-click (function &body body)
+  `(format nil ,(format nil "^(:on-click :~a)~~a^(:on-click-end)" (string-downcase function))
+           (progn ,@body)))
 
 (defclick music-player-click ()
+  (:after (update-all-mode-lines))
   (:left-button (toggle-track))
   (:middle-button (set-volume-from-menu))
+  (:wheel-up (volume-up))
+  (:wheel-down (volume-down))
   (:right-button (set-player)))
 
 (defclick next-track-click ()
-  (t (audio:next-track)))
+  (t (next-track)))
 
 (defclick previous-track-click ()
-  (t (audio:previous-track)))
+  (t (previous-track)))
 
 (defparameter *stumpwm-font*
   (make-instance 'xft:font
@@ -81,6 +94,14 @@ CAR is either any value returned by decode-button-code or T for any unspecified 
   (:wheel-down (gprev))
   (t (switch-to-group (find-group (current-screen) group))))
 
+(defclick groups-click ()
+  (:wheel-up (gnext))
+  (:wheel-down (gprev)))
+
+(defclick windows-click ()
+  (:wheel-up (pull-hidden-next))
+  (:wheel-down (pull-hidden-previous)))
+
 (setf *mode-line-background-color* *background-color*
       *mode-line-foreground-color* *foreground-color*
       *mode-line-border-width* 0
@@ -98,13 +119,18 @@ CAR is either any value returned by decode-button-code or T for any unspecified 
 (setf *group-format* "%n")
 
 (setf *screen-mode-line-format*
-      '(" ^(:on-click :lisp-icon) ^(:on-click-end) "
-        "'(%g) '(%W) ^> ^(:on-click :music-player-click) "
-        (:eval
-         *track*)
-        "^(:on-click-end)"
-        "^(:on-click :previous-track-click)  ^(:on-click-end)"
-        "^(:on-click :next-track-click) ^(:on-click-end)"
-        "│ %C │ %M │ ^2󰁹^* %B │ %d"))
+      (list " ^(:on-click :lisp-icon) ^(:on-click-end) "
+            "^(:on-click :groups-click)'(%g)^(:on-click-end)"
+            "^(:on-click :windows-click) '(%W)^(:on-click-end)"
+            "^>"
+            "^(:on-click :music-player-click) "
+            '(:eval
+              *track*)
+            "^(:on-click-end)"
+            '(:eval
+              (concatenate 'string " " (volume-value) "%"))
+            "^(:on-click :previous-track-click)  ^(:on-click-end)"
+            "^(:on-click :next-track-click) ^(:on-click-end)"
+            "│ %C │ %M │ ^2󰁹^* %B │ %d"))
 (enable-mode-line (current-screen) (current-head) t)
 (defvar *track-thread* (bt:make-thread #'track-thread-action :name "Track Thread"))
