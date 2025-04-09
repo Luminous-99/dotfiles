@@ -12,28 +12,36 @@ send() {
         muted="";
     fi
 
-    dunstify -i none -r 6666 -u normal -h int:value:$volume " $muted " "" 
+    case $1 in
+        Silent) ;;
+        *) dunstify -i none -r 6666 -u normal -h int:value:$volume " $muted " ""
+           ;;
+    esac
+    echo $volume
 }
 
 case $mode in
     Up)
-	if [ -z "$amount" ]; then
-	    pactl set-sink-volume @DEFAULT_SINK@ +5% 
-	else
-	    pactl set-sink-volume @DEFAULT_SINK@ +$amount%
-	fi
-	send
+	    if [ -z "$amount" ]; then
+	        pactl set-sink-volume @DEFAULT_SINK@ +5% 
+	    else
+	        pactl set-sink-volume @DEFAULT_SINK@ +$amount%
+	    fi
+	    send
         ;;
     Down)
-	if [ -z "$amount" ]; then
-	    pactl set-sink-volume @DEFAULT_SINK@ -5% 
-	else
-	    pactl set-sinkvolume @DEFAULT_SINK@ -$amount%
-	fi
-	send
+	    if [ -z "$amount" ]; then
+	        pactl set-sink-volume @DEFAULT_SINK@ -5% 
+	    else
+	        pactl set-sinkvolume @DEFAULT_SINK@ -$amount%
+	    fi
+	    send
         ;;
     Mute)
-	pactl set-sink-mute @DEFAULT_SINK@ toggle 
-	send
+	    pactl set-sink-mute @DEFAULT_SINK@ toggle 
+	    send
+        ;;
+    Volume)
+        send Silent
         ;;
 esac

@@ -22,6 +22,10 @@
 (in-package :audio)
 
 ;; Volume
+(defcommand volume-Value () ()
+  (let ((val (run-shell-command "~/.stumpwm.d/scripts/volume_notify.sh Volume" t)))
+    (subseq val 0 (1- (length val)))))
+
 (defcommand volume-up () ()
   (run-shell-command "~/.stumpwm.d/scripts/volume_notify.sh Up"))
 
