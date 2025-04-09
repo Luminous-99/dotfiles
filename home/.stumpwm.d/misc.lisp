@@ -42,6 +42,8 @@
 ;; -------------------------
 
 (load-module "ttf-fonts")
+(dolist (path '("/usr/share/fonts/TTF" "/usr/share/fonts/OTF"))
+  (pushnew path xft:*font-dirs* :test #'string=)) 
 (defparameter *font*
   (make-instance 'xft:font
                  :family "0xProto Nerd Font"
@@ -61,17 +63,22 @@
 (defparameter *background-color* "#f2f2f2")
 (set-bg-color *background-color*)
 (set-fg-color *foreground-color*)
-(set-float-focus-color "#555555")
+(set-float-focus-color "#555555") 
 (set-float-unfocus-color *background-color*)
 
+(defun run-shell-commands (&rest commands)
+  (run-shell-command (format nil "~{~a~^ && ~}" commands) t))
+
 (defcommand x-setup () ()
-  "Set up SUPER and HYPER"
-  (run-shell-command "xmodmap -e \"clear mod4\"" t)
-  ;; change Left Windows key to F20 key
-  (run-shell-command "xmodmap -e \"keycode 133 = F20\"" t)
-  ;; change Menu key to Hyper key
-  (run-shell-command "xmodmap -e \"keycode 135 = Hyper_R\"" t)
-  (run-shell-command "xsetroot -cursor_name left_ptr" t)
+  "Setup X11 related stuff."
+  (run-shell-commands
+   ;; change Left Windows key to F20 key
+   "xmodmap -e \"clear mod4\""
+   "xmodmap -e \"keycode 133 = F20\""
+   ;; change Menu key to Hyper key
+   "xmodmap -e \"keycode 135 = Hyper_R\""
+   "xmodmap -e \"add mod3 = Hyper_R\""
+   "xsetroot -cursor_name left_ptr")
   (set-prefix-key (kbd "F20")))
 
 (x-setup)
