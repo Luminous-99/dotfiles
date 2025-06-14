@@ -24,6 +24,9 @@
    #:toggle-float
    #:delete-split
    #:split-horizontal
+   #:place-all-windows
+   #:renumber-to-next
+   #:renumber-to-previous
    #:split-vertical
    #:clear-messages
    #:*window-preferences*))
@@ -40,8 +43,11 @@
       *maxsize-border-width* 0
       *normal-border-width* 0
       *transient-border-width* 0
-      *message-window-padding* 5
-      *message-window-y-padding* 5)
+      *message-window-padding* 15
+      *message-window-y-padding* 15)
+
+(set-msg-border-width 1) 
+(set-border-color *foreground-color*)
 
 (defun (setf stumpwm::window-property) (value window property)
   (multiple-value-bind (value type format)
@@ -49,7 +55,7 @@
         (integer (values (list value) :integer 32))
         (string (values (map 'vector #'char-code value) :string 8))
         (symbol (values (map 'vector #'char-code (symbol-name value)) :string 8)))
-    (xlib:change-property (window-xwin window) property value type format)))
+    (xlib:change-property (if (xlib:window-p window) window (window-xwin window)) property value type format)))
 
 (defun set-floating (window floating)
   (if floating
@@ -61,7 +67,7 @@
         (setf (stumpwm::window-property window :_STUMPWM_FLOATING) 0))))
 
 (defun sort-current-group (&optional window)
-  "Sort windows on destruction."
+  "Sort windows."
   (declare (ignorable window))
   (let* ((windows (group-windows (current-group)))
          (windows (sort (copy-list windows)
@@ -77,10 +83,10 @@
             do (setf (window-number win2) (1+ num1))))
   (stumpwm::update-all-mode-lines))
 
-(setf *destroy-window-hook* (list #'sort-current-group))
+(setf *destroy-window-hook* (list 'sort-current-group))
 
 (defun float-unless-maximized (window)
-  (unless swm-gaps:*gaps-on*
+  (unless (getf (stumpwm::group-plist (current-group)) :GAPS)
     (when-let* ((screen (current-screen))
                 (mode-line (car (stumpwm::screen-mode-lines (current-screen))))
                 (maximized-width (screen-width screen))
@@ -91,17 +97,16 @@
           (set-floating window t)
           (focus-window window t))))))
 
-(setf *new-window-hook* (list #'float-unless-maximized))
+(setf *new-window-hook* (list 'float-unless-maximized))
 
 (defparameter *resizing-mode* nil)
 (setf *resize-increment* 20)
 
-(defun float-move-resize (window &key x y width height)
-  (stumpwm::float-window-move-resize window
-                            :x (or x (window-x window))
-                            :y (or y (window-y window))
-                            :width (or width (window-width window))
-                            :height (or height (window-height window))))
+(defun float-move-resize (window &key (x (window-x window))
+                                   (y (window-y window))
+                                   (width (window-width window))
+                                   (height (window-height window)))
+  (stumpwm::float-window-move-resize window :x x :y y :width width :height height))
 
 (defun float-resize (window dir)
   (with-accessors ((width window-width) (height window-height)) window
@@ -146,7 +151,7 @@
 
 (defcommand terminate-this () ()
   (let ((window (current-window)))
-    (kill-window window)
+    (delete-window window)
     (toggle-gaps)))
 
 (defcommand toggle-float (&optional (window (current-window))) ()
@@ -232,18 +237,18 @@
 (defun place-windows (&optional (screen (current-screen)))
   "Place windows according to *WINDOW-PREFERENCES*."
   (dolist (window (screen-windows screen))
-    (when-let ((preference (some (lambda (preference)
-                                   (preference-matches-p window preference))
-                                 *window-preferences*)))
+    (when-let ((preference (find window *window-preferences*
+                                  :test #'preference-matches-p)))
       (destructuring-bind (&key class window-number group-name group-number)
           preference
         (declare (ignorable class))
         (when window-number
-          (if-let ((old-window (find window-number (group-windows (window-group window))
-                                     :key #'window-number :test #'=)))
-            (setf (window-number old-window) (window-number window)
-                  (window-number window) window-number)
-            (setf (window-number window) window-number)))
+          (let ((old-window (find window-number (group-windows (window-group window))
+                                  :key #'window-number :test #'=)))
+            (if old-window
+                (setf (window-number old-window) (window-number window)
+                      (window-number window) window-number)
+                (setf (window-number window) window-number))))
         (cond
           ((and group-name (not (string= group-name (group-name (window-group window)))))
            (move-window-to-group window (find-group screen group-name)))
@@ -262,6 +267,66 @@
   (:class "Spotify" :window-number 1 :group-name "Group 2"))
 
 (define-key *root-map* (kbd "W") "place-all-windows")
+
+(defcommand withdraw-window (&optional (window (current-window))) ()
+  (stumpwm::withdraw-window window))
+
+(defcommand withdraw-all-windows (&optional (group (current-group))) ()
+  (dolist (window (group-windows group))
+    (stumpwm::withdraw-window window)))
+
+(flet ((window-from-menu ()
+         (let ((windows (stumpwm::screen-withdrawn-windows (current-screen))))
+           (and windows (stumpwm::select-window-from-menu windows *window-format*)))))
+  (defcommand restore-window (&optional (window (window-from-menu))) ()
+    (when window
+      (let* ((windows (group-windows (current-group)))
+             (windows (stumpwm::sort-windows-by-number windows))
+             (restored-number (window-number window))
+             (obstruction (find restored-number  windows :key #'window-number :test #'=)))
+        (stumpwm::restore-window window)
+        (if obstruction
+            (setf (window-number obstruction) (window-number window)
+                  (window-number window) restored-number)
+            (setf (window-number window) restored-number))))))
+
+(defcommand restore-newest-window () ()
+  (restore-window (car (stumpwm::screen-withdrawn-windows (current-screen)))))
+
+(defcommand restore-oldest-window () ()
+  (restore-window (car (last (stumpwm::screen-withdrawn-windows (current-screen))))))
+
+(defcommand restore-all-windows () ()
+  (dolist (window (stumpwm::screen-withdrawn-windows (current-screen)))
+    (restore-window window)))
+
+(let ((wallpaper-mode nil))
+  (defcommand wallpaper-mode () ()
+    (setf wallpaper-mode (not wallpaper-mode))
+    (if wallpaper-mode
+        (progn
+          (enable-mode-line (current-screen) (current-head) nil)
+          (withdraw-all-windows)
+          (define-key *top-map* (kbd "ESC") "wallpaper-mode"))
+        (progn
+          (enable-mode-line (current-screen) (current-head) t)
+          (restore-all-windows)
+          (undefine-key *top-map* (kbd "ESC"))))))
+
+(defparameter *scratchpad-map*
+  (let ((map (make-sparse-keymap)))
+    (define-keys map
+      ("w" . "withdraw-window")
+      ("a" . "withdraw-all-windows")
+      ("r" . "restore-window")
+      ("1" . "restore-newest-window")
+      ("0" . "restore-oldest-window")
+      ("*" . "restore-all-windows")
+      ("ESC" . "wallpaper-mode"))
+    map))
+
+(define-keys *root-map*
+  ("o" . '*scratchpad-map*))
 
 (dotimes (i 9)
   (define-key *root-map* (kbd (format nil "M-~a" (1+ i)))
