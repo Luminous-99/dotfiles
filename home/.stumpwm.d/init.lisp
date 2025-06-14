@@ -1,6 +1,9 @@
 (in-package :stumpwm)
 
+(setf *debug-level* 6)
+
 (load-module "mem")
+(load-module "ttf-fonts")
 (load-module "cpu")
 (load-module "battery-portable") 
 (load-module "wifi")

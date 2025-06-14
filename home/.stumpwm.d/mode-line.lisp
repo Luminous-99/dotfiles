@@ -6,7 +6,9 @@
                 #:window-by-id
                 #:find-group
                 #:switch-to-group
-                #:update-all-mode-lines))
+                #:update-all-mode-lines)
+  (:import-from :symbol-hooks #:define-symbol-hook)
+  (:shadowing-import-from :symbol-hooks #:setf))
 
 (in-package :mode-line)
 
@@ -66,7 +68,7 @@ CAR is either any value returned by decode-button-code or T for any unspecified 
 
 (defclick lisp-icon ()
   (:left-button
-   (message "^(:font 1)( ^(:fg \"#4d4d4d\")Stump^**^(:fg \"#ff7f2a\")WM^**)")
+   (message "^(:font 1)^(:fg \"#4d4d4d\")( Stump^**^(:fg \"#ff7f2a\")WM^**^(:fg \"#4d4d4d\"))^**")
    (x-setup))
   (:middle-button
    (when (stumpwm::y-or-n-p (format nil "Do you want to shutdown?~%"))
@@ -89,9 +91,17 @@ CAR is either any value returned by decode-button-code or T for any unspecified 
   (:wheel-up (pull-hidden-next))
   (:wheel-down (pull-hidden-previous)))
 
+(defclick add-group-click ()
+  ((or :right-button :middle-button :left-button)
+   (gnewbg (format nil "Group ~a" (1+ (length (screen-groups (current-screen))))))
+   (update-all-mode-lines)))
+
 (defclick ml-on-click-switch-to-group (group)
   (:wheel-up (gnext))
   (:wheel-down (gprev))
+  (:middle-button
+   (stumpwm::kill-group (find-group (current-screen) group) (current-group))
+   (update-all-mode-lines))
   (t (switch-to-group (find-group (current-screen) group))))
 
 (defclick groups-click ()
@@ -103,10 +113,21 @@ CAR is either any value returned by decode-button-code or T for any unspecified 
   (:wheel-down (pull-hidden-previous)))
 
 (setf *mode-line-background-color* *background-color*
-      *mode-line-foreground-color* *foreground-color*
+      *mode-line-foreground-color* "#333333"
       *mode-line-border-width* 0
-      *time-modeline-string* "%a %b %e %k:%M"
+      *time-modeline-string* "%a %b %d/%m/%y %H:%M"
       *mode-line-timeout* 2)
+
+(macrolet ((refresh-mode-line ()
+             `(progn
+                (mode-line)
+                (mode-line))))
+  (define-symbol-hook *mode-line-background-color*
+    (unless (string= *mode-line-background-color* new-value)
+      (refresh-mode-line)))
+  (define-symbol-hook *mode-line-foreground-color*
+    (unless (string= *mode-line-foreground-color* new-value)
+      (refresh-mode-line))))
 
 (defun window-title-formatter (window)
   (string-upcase (cond
@@ -118,19 +139,52 @@ CAR is either any value returned by decode-button-code or T for any unspecified 
 (setf *window-format* "(%n . %N)")
 (setf *group-format* "%n")
 
-(setf *screen-mode-line-format*
-      (list " ^(:on-click :lisp-icon) ^(:on-click-end) "
-            "^(:on-click :groups-click)'(%g)^(:on-click-end)"
-            "^(:on-click :windows-click) '(%W)^(:on-click-end)"
-            "^>"
-            "^(:on-click :music-player-click) "
-            '(:eval
-              *track*)
-            "^(:on-click-end)"
-            '(:eval
-              (concatenate 'string " " (volume-value) "%"))
-            "^(:on-click :previous-track-click)  ^(:on-click-end)"
-            "^(:on-click :next-track-click) ^(:on-click-end)"
-            "│ %C │ %M │ ^2󰁹^* %B │ %d"))
+(defmacro with-formatting (&body body)
+  (flet ((on-click->string (x)
+           (if (and (consp x) (eq (car x) :on-click))
+               (let ((last (car (last x))))
+                 (if (consp last)
+                     `(list ,(format nil "^(:on-click ~{~s~^ ~})" (cdr (butlast x)))
+                            ,last
+                            "^(:on-click-end)")
+                     (format nil "^(:on-click ~{~s~^ ~})~a^(:on-click-end)" (cdr (butlast x)) last)))
+               x)))
+    (let ((body (mapcar #'on-click->string body)))
+      `',(reverse (loop for x in body
+                        with list = (list)
+                        finally (return list)
+                        do (if (and (consp x) (eq (car x) 'list))
+                               (dolist (x (cdr x))
+                                 (push x list))
+                               (if (and (stringp x) (stringp (car list))) 
+                                   (setf (car list) (concatenate 'string (car list) x))
+                                   (push x list))))))))
+
+(defun battery-fmt (modeline)
+  (declare (ignorable modeline))
+  (if battery-portable::*preferred-drivers-failed*
+      ""
+      (format nil " (^2󰁹^* ~a)" (battery-portable::fmt-bat modeline))))
+
+(add-screen-mode-line-formatter  #\B #'battery-fmt)
+
+(let ((format (with-formatting
+                (:on-click :lisp-icon "   ")
+                (:on-click :add-group-click "(gnew)")
+                (:on-click :groups-click " '(%g)")
+                (:on-click :windows-click " '(%W)")
+                "^>"
+                "( "
+                (:on-click :music-player-click (:eval *track*))
+                (:eval
+                 (concatenate 'string " " (volume-value) "%"))
+                (:on-click :previous-track-click "  ") 
+                (:on-click :next-track-click " ")
+                ") "
+                "(%C) (%M)"
+                "%B"
+                " (%d)")))
+  (setf *screen-mode-line-format* format))
+
 (enable-mode-line (current-screen) (current-head) t)
 (defvar *track-thread* (bt:make-thread #'track-thread-action :name "Track Thread"))

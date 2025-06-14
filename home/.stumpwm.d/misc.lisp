@@ -17,11 +17,23 @@
    #:integer->rgb-string
    #:run-swank
    #:auto-start
-   #:screenshot))
+   #:screenshot
+   #:emacs
+   #:alacritty
+   #:dmenu
+   #:app-selector
+   #:file-selector
+   #:mail
+   #:universal-argument)
+  (:import-from :symbol-hooks #:define-symbol-hook #:hooked-symbol-p)
+  (:import-from :alexandria #:when-let* #:when-let)
+  (:shadowing-import-from :symbol-hooks #:setf))
 
 (in-package :misc)
 
 (setf *altgr-offset* 4)
+(setf *default-selections* '(:clipboard))
+(setf *default-package* (find-package :stumpwm))
 (register-altgr-as-modifier)
 
 (defvar *swank-running* nil)
@@ -35,13 +47,30 @@
 
 (run-swank)
 
+(defun rgb-string->integer (hex)
+  (parse-integer (subseq hex 1) :radix 16))
+
+(defun integer->rgb-string (integer)
+  (format nil "#~x" integer))
+
+(defparameter *foreground-color* "#23139f")
+(defparameter *background-color* "#f2f2f2")
+(set-fg-color *foreground-color*)
+(set-bg-color *background-color*)
+(define-symbol-hook *foreground-color*
+  (set-fg-color new-value))
+(define-symbol-hook *background-color*
+  (set-bg-color new-value))
+(set-float-focus-color "#555555") 
+(set-float-unfocus-color *background-color*)
+
+
 ;; xfontsel example just in case.
 ;; -------------------------
 ;; -misc-0xproto nerd font-medium-r-normal--12-120-100-100-p-0-iso8859-16
 ;; (set-font "-misc-0xproto nerd font-medium-r-normal--17-110-110-110-p-0-iso8859-16")
 ;; -------------------------
 
-(load-module "ttf-fonts")
 (dolist (path '("/usr/share/fonts/TTF" "/usr/share/fonts/OTF"))
   (pushnew path xft:*font-dirs* :test #'string=)) 
 (defparameter *font*
@@ -53,21 +82,20 @@
 
 (set-font *font*)
 
-(defun rgb-string->integer (hex)
-  (parse-integer (subseq hex 1) :radix 16))
-
-(defun integer->rgb-string (integer)
-  (format nil "#~x" integer))
-
-(defparameter *foreground-color* "#333333")
-(defparameter *background-color* "#f2f2f2")
-(set-bg-color *background-color*)
-(set-fg-color *foreground-color*)
-(set-float-focus-color "#555555") 
-(set-float-unfocus-color *background-color*)
-
 (defun run-shell-commands (&rest commands)
   (run-shell-command (format nil "~{~a~^ && ~}" commands) t))
+
+(labels ((sanitize-sexp (sexp)
+           (typecase sexp
+             (cons (mapcar #'sanitize-sexp sexp))
+             (string (format nil "\\\"~A\\\"" sexp))
+             (symbol (string-downcase sexp))
+             (t sexp))))
+  (defmacro with-emacs (&body body)
+    "Call Elisp code as directly from common lisp as Sexps."
+    (let* ((body (mapcar #'sanitize-sexp body))
+           (body (format nil "emacsclient --eval \"(progn ~{~A~^ ~})\"" body)))
+      `(values (run-shell-command ,body) ,body))))
 
 (defcommand x-setup () ()
   "Setup X11 related stuff."
@@ -86,12 +114,14 @@
 (defun window-exists? (class)
   (let ((windows (group-windows (current-group))))
     (loop for window in windows
-          when (eq (window-class window) class)
+          when (string= (window-class window) class)
             return t)))
 
 (defun run-program (command &optional (class nil))
-  (unless (window-exists? class)
-    (uiop:launch-program command)))
+  (if class
+      (unless (window-exists? class)
+        (uiop:launch-program command))
+      (uiop:launch-program command)))
 
 (defun run-programs (programs)
   (dolist (program programs)
@@ -106,12 +136,7 @@
                                  :ignore-error-status t)))
 
 (defmacro define-keys (map &body keys)
-  `(dolist (key (list ,@(mapcar (lambda (key)
-                                  (let ((result (car key)))
-                                    (if (stringp result)
-                                        `(cons (kbd ,result) ,(cdr key))
-                                        key)))
-                                keys)))
+  `(dolist (key (list ,@(mapcar (lambda (key) `(cons (kbd ,(car key)) ,(cdr key))) keys)))
      (undefine-key ,map (car key))
      (define-key ,map (car key) (cdr key))))
 
@@ -178,6 +203,10 @@
 (defcommand alacritty () ()
   (run-shell-command "alacritty"))
 
+(defcommand emacs (&optional (client t)) ()
+  (run-program (format nil "emacs~a " (if client "client --alternate-editor= -c" ""))
+               "Emacs"))
+
 (defcommand dmenu () ()
   (run-shell-command (format nil "dmenu_run -fn 0xProto -nb ~S -nf ~S" *background-color* *foreground-color*)))
 
@@ -215,8 +244,44 @@
 
 (run-programs '(("picom" . "-b --vsync -f")
                 ("dunst" . "-conf ~/.config/dunst/dunstrc")
-                ("feh" . "--no-fehbg --bg-scale ~/dotfiles/Background/The_Garden_of_earthly_delights_Reduced.jpg")
+                ("feh" . " --no-fehbg --bg-scale ~/dotfiles/Background/Destruction_of_Leviathan.png")
                 ("kdeconnectd" . "")))
 
 (defcommand auto-start () ()
   (run-programs *startup-programs*))
+
+(defun collect-digit-arguments ()
+  (prog2 (stumpwm::grab-keyboard (window-xwin (current-window)))
+      (loop with key = nil
+            while (setf key (read-one-char (current-screen)))
+            if (digit-char-p key)
+              collect key into keys
+            else
+              return keys)
+    (stumpwm::ungrab-keyboard)))
+
+(defun digit-argument ()
+  (let ((digits (coerce (collect-digit-arguments) 'string)))
+    (if (> (length digits) 0)
+        (parse-integer digits)
+        nil)))
+
+(defun key-argument ()
+  (prog2 (stumpwm::grab-keyboard (window-xwin (current-window)))
+      (multiple-value-list (stumpwm::read-from-keymap (list *top-map*)))
+    (stumpwm::ungrab-keyboard)))
+
+(defcommand universal-argument (&optional number key) ()
+  (let ((number (or number (digit-argument)))
+        (key (or key (key-argument))))
+    (when number
+      (handler-case
+          (dotimes (i number)
+            (let* ((command (car key))
+                   (key (caadr key)))
+              (if (stringp command)
+                  (run-commands command)
+                  (stumpwm::send-fake-key (current-window) key))))
+        (error (err) (message "~a" err))))))
+
+(define-keys *root-map* ("u" . "universal-argument"))
