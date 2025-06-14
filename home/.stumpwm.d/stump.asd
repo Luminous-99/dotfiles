@@ -2,9 +2,11 @@
   :author "luminous99"
   :pathname #.(concatenate 'string (uiop:getenv "HOME") "/.stumpwm.d/")
   :serial t
-  :depends-on (:swank :stumpwm :clx-truetype :alexandria :uiop)
-  :components ((:file "misc")
+  :depends-on (:swank :clx-truetype :alexandria :uiop)
+  :components ((:file "symbol-hooks")
+               (:file "misc")
                (:file "contrib")
                (:file "windows")
                (:file "audio")
-               (:file "mode-line")))
+               (:file "mode-line")
+               (:file "window-decorator")))
