@@ -337,3 +337,19 @@
 (gnew-dynamic "Group 9")
 
 (gselect "1")
+
+(defcommand eval-line (cmd) ((:rest "Eval: "))
+  "Evaluate the s-expression and display the result(s)."
+  (handler-case
+      (if cmd
+          (message "~{~a~^~%~}"
+                   (mapcar 'prin1-to-string
+                           (multiple-value-list (eval (read-from-string cmd)))))
+          (throw 'error :abort))
+    (error (c)
+      (err "^B^1*~A" c))))
+
+(setf (stumpwm::window-property (stumpwm::screen-message-window (current-screen)) :_STUMPWM_FLOATING) 1)
+(setf (stumpwm::window-property (stumpwm::screen-message-window (current-screen)) :WM_CLASS) :STUMPWM_MESSAGE)
+(setf (stumpwm::window-property (stumpwm::screen-input-window (current-screen)) :_STUMPWM_FLOATING) 1)
+(setf (stumpwm::window-property (stumpwm::screen-input-window (current-screen)) :WM_CLASS) :STUMPWM_MESSAGE)
