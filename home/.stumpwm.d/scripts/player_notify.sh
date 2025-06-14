@@ -12,7 +12,7 @@ salbum=$(playerctl --player="$1" metadata --format "{{album}}" | tr " " "_")
 url=$(playerctl --player="$1" metadata --format "{{mpris:artUrl}}" | tr " " "_")
 icon_file=$(echo "$icondir/$sartist/$stitle")
 
-if [ -e "$icon_file" ]; then
+if [ -e "$icon_file" ] || [ -z "$url" ]; then
     echo
 else
     mkdir -p "$icondir/$sartist"
