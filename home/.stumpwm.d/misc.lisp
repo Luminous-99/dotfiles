@@ -1,5 +1,5 @@
 (defpackage misc
-  (:use :cl :stumpwm :clx-truetype)
+  (:use :cl :stumpwm :clx-truetype :trivial-gray-streams)
   (:export
    #:define-keys
    #:undefine-keys
@@ -24,7 +24,9 @@
    #:app-selector
    #:file-selector
    #:mail
-   #:universal-argument)
+   #:universal-argument
+   #:shell-command
+   #:run-application)
   (:import-from :symbol-hooks #:define-symbol-hook #:hooked-symbol-p)
   (:import-from :alexandria #:when-let* #:when-let)
   (:shadowing-import-from :symbol-hooks #:setf))
@@ -102,6 +104,7 @@
   (run-shell-commands
    ;; change Left Windows key to F20 key
    "xmodmap -e \"clear mod4\""
+   "xmodmap -e \"add mod4 = Super_R\""
    "xmodmap -e \"keycode 133 = F20\""
    ;; change Menu key to Hyper key
    "xmodmap -e \"keycode 135 = Hyper_R\""
@@ -203,9 +206,11 @@
 (defcommand alacritty () ()
   (run-shell-command "alacritty"))
 
-(defcommand emacs (&optional (client t)) ()
-  (run-program (format nil "emacs~a " (if client "client --alternate-editor= -c" ""))
-               "Emacs"))
+(defcommand emacs (&optional (file "") (client t)) ()
+  (run-program (format nil "emacs~a ~a" (if client "client --alternate-editor= -c" "") file))
+  file)
+
+#+sbcl (pushnew 'emacs cl-user::*ed-functions*)
 
 (defcommand dmenu () ()
   (run-shell-command (format nil "dmenu_run -fn 0xProto -nb ~S -nf ~S" *background-color* *foreground-color*)))
@@ -216,12 +221,22 @@
 (defcommand file-selector () ()
   (run-shell-command  "rofi -show recursivebrowser"))
 
+(let* ((history (list *shell-program*))
+       (history-tail history))
+  (defcommand shell-command (&optional cmd) ()
+    (let ((cmd (or cmd (completing-read (current-screen) "$ " history)))
+          (stumpwm::*input-history* history))
+      (setf (cdr history-tail) (list cmd)
+            history-tail (cdr history-tail))
+      (uiop:launch-program cmd))))
+
 (define-keys *root-map*
   ("d" . "dmenu")
   ("D" . "app-selector")
   ("M-d" . "file-selector")
   ("c" . "alacritty")
-  ("t" . "alacritty"))
+  ("t" . "alacritty")
+  ("!" . "shell-command"))
 
 (defcommand screenshot () ()
   (run-shell-command "flameshot gui"))
@@ -237,18 +252,21 @@
   ("XF86Mail" . "mail \"\" \"\"")
   ("C-XF86Mail" . "mail"))
 
-(defparameter *startup-programs* '(("emacsclient" . "--alternate-editor= -c")
-                                   ("firefox" . "")
-                                   ("vesktop" . "")
-                                   ("steam" . "-silent")))
-
 (run-programs '(("picom" . "-b --vsync -f")
                 ("dunst" . "-conf ~/.config/dunst/dunstrc")
                 ("feh" . " --no-fehbg --bg-scale ~/dotfiles/Background/Destruction_of_Leviathan.png")
-                ("kdeconnectd" . "")))
+                ("kdeconnectd")))
 
-(defcommand auto-start () ()
-  (run-programs *startup-programs*))
+(defcommand run-application (name) ((:string "Name: "))
+  (let ((cmd (format nil "~~/.stumpwm.d/scripts/run-application ~S" name)))
+    (run-shell-command cmd)))
+
+(defcommand auto-start (&optional (path #P"~/.stumpwm.d/programs.sexp")) ()
+  (with-open-file (file path)
+    (let ((programs (read file)))
+      (run-programs (getf programs :shell))
+      (dolist (name (getf programs :desktop))
+        (run-application name)))))
 
 (defun collect-digit-arguments ()
   (prog2 (stumpwm::grab-keyboard (window-xwin (current-window)))
@@ -262,9 +280,8 @@
 
 (defun digit-argument ()
   (let ((digits (coerce (collect-digit-arguments) 'string)))
-    (if (> (length digits) 0)
-        (parse-integer digits)
-        nil)))
+    (unless (zerop (length digits))
+      (parse-integer digits))))
 
 (defun key-argument ()
   (prog2 (stumpwm::grab-keyboard (window-xwin (current-window)))
@@ -284,4 +301,6 @@
                   (stumpwm::send-fake-key (current-window) key))))
         (error (err) (message "~a" err))))))
 
-(define-keys *root-map* ("u" . "universal-argument"))
+(define-keys *root-map*
+  ("u" . "universal-argument")
+  ("M" . "mode-line"))

@@ -14,8 +14,7 @@ send() {
 
     case $1 in
         Silent) ;;
-        *) dunstify -i none -r 6666 -u normal -h int:value:$volume " $muted " ""
-           ;;
+        *) dunstify -i none -r 6666 -u normal -h int:value:$volume " $muted " "" ;;
     esac
     echo $volume
 }
