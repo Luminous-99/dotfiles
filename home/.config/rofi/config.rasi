@@ -1,27 +1,27 @@
 configuration {
-/*	modi: "window,run,ssh";*/
-	font: "0xProto Nerd Font 12";
-/*	location: 0;*/
-/*	yoffset: 0;*/
-/*	xoffset: 0;*/
-/*	fixed-num-lines: true;*/
-	show-icons: true;
+    /*	modi: "window,run,ssh";*/
+    font: "0xProto Nerd Font 12";
+    /*	location: 0;*/
+    /*	yoffset: 0;*/
+    /*	xoffset: 0;*/
+    /*	fixed-num-lines: true;*/
+    show-icons: true;
     kb-row-left: "Control+h";
     kb-row-right: "Control+l";
     kb-row-down: "Control+j,Control+n";
     kb-row-up: "Control+k,Control+p";
     kb-remove-to-eol: "";
-	kb-remove-char-back: "BackSpace,Shift+BackSpace";
-	kb-accept-entry: "Control+s,Return";
+    kb-remove-char-back: "BackSpace,Shift+BackSpace";
+    kb-accept-entry: "Control+s,Return";
     kb-mode-complete: "";
-  timeout {
-      action: "kb-cancel";
-      delay:  0;
-  }
-  filebrowser {
-      directories-first: true;
-      sorting-method:    "name";
-  }
+    timeout {
+        action: "kb-cancel";
+        delay:  0;
+    }
+    filebrowser {
+        directories-first: true;
+        sorting-method:    "name";
+    }
 }
 
 * {
@@ -64,17 +64,19 @@ configuration {
     alternate-urgent-foreground: @urgent-foreground;
     selected-urgent-background:  @light-red-light;
     selected-urgent-foreground:  @urgent-foreground;
-    border-radius: 20px;
+    border-radius: 0px;
 }
 window {
-    padding:          5;
+    padding: 5px;
     background-color: var(background);
-    border:           3px;
+    border: 3px;
 }
+
 mainbox {
-    padding: 5;
+    padding: 5px;
     border:  0;
 }
+
 message {
     padding:      1px ;
     border-color: var(separatorcolor);
@@ -84,27 +86,32 @@ textbox {
     text-color: var(foreground);
 }
 listview {
-    padding:      2px 0px 0px ;
-    scrollbar:    true;
+    scrollbar:    false;
     border-color: var(separatorcolor);
     spacing:      2px ;
     fixed-height: 0;
-    border:       2px dash 0px 0px ;
-    columns: 2;
+    border: none;
+    columns: 5;
+    lines: 8;
+    layout: vertical;
+    fixed-columns: true;
 }
 element {
-    padding: 1px ;
+    padding: 1px;
     border:  0;
     background-color: var(normal-background);
+    orientation: vertical;
+    children: [ element-icon, element-text ];
 }
 element-text {
-    vertical-align: 0.5;
-    size: 1.5em;
+    horizontal-align: 0.5;
+    size: 0.5em;
     background-color: var(normal-background);
     padding: 10px;
 }
 element-icon {
     size: 2.5em;
+    padding: 5px;
 }
 element normal.normal {
     background-color: var(normal-background);

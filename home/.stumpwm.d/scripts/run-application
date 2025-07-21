@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -x
+
+DIRS="/var/lib/flatpak/exports/share/applications/:/usr/share/applications:$HOME/.local/share/applications"
+file=""
+
+IFS=":"
+for path in $DIRS; do
+    if [ -z "$file" ]; then
+       file=$(grep -iRl "Name=$1" "$path" | head -1);
+    else 
+	break
+    fi
+done
+IFS=$'\n'
+
+if [ -n "$file" ]; then
+   gtk-launch $(basename "$file") &
+fi
