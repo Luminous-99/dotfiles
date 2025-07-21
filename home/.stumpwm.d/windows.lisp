@@ -87,15 +87,16 @@
 
 (defun float-unless-maximized (window)
   (unless (getf (stumpwm::group-plist (current-group)) :GAPS)
-    (when-let* ((screen (current-screen))
-                (mode-line (car (stumpwm::screen-mode-lines (current-screen))))
-                (maximized-width (screen-width screen))
-                (maximized-height (- (screen-height screen) (stumpwm::mode-line-height mode-line))))
-      (let ((width (window-width window))
-            (height (window-height window)))
-        (when (or (< width maximized-width) (< height maximized-height))
-          (set-floating window t)
-          (focus-window window t))))))
+    (when window
+      (when-let* ((screen (current-screen))
+                  (mode-line (car (stumpwm::screen-mode-lines (current-screen))))
+                  (maximized-width (screen-width screen))
+                  (maximized-height (- (screen-height screen) (stumpwm::mode-line-height mode-line))))
+        (let ((width (window-width window))
+              (height (window-height window)))
+          (when (or (< width maximized-width) (< height maximized-height))
+            (set-floating window t)
+            (focus-window window t)))))))
 
 (setf *new-window-hook* (list 'float-unless-maximized))
 
@@ -238,7 +239,7 @@
   "Place windows according to *WINDOW-PREFERENCES*."
   (dolist (window (screen-windows screen))
     (when-let ((preference (find window *window-preferences*
-                                  :test #'preference-matches-p)))
+                                 :test #'preference-matches-p)))
       (destructuring-bind (&key class window-number group-name group-number)
           preference
         (declare (ignorable class))
@@ -269,6 +270,7 @@
 (define-key *root-map* (kbd "W") "place-all-windows")
 
 (defcommand withdraw-window (&optional (window (current-window))) ()
+  (setf (gethash :number (window-plist window)) (window-number window))
   (stumpwm::withdraw-window window))
 
 (defcommand withdraw-all-windows (&optional (group (current-group))) ()
@@ -282,7 +284,7 @@
     (when window
       (let* ((windows (group-windows (current-group)))
              (windows (stumpwm::sort-windows-by-number windows))
-             (restored-number (window-number window))
+             (restored-number (gethash :number (window-plist window)))
              (obstruction (find restored-number  windows :key #'window-number :test #'=)))
         (stumpwm::restore-window window)
         (if obstruction
