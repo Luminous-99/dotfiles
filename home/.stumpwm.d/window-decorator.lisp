@@ -74,8 +74,8 @@
     (lambda (&optional free)
       (if (eq free :free)
           (progn
-            (xlib:free-pixmap px)
-            (xlib:free-gcontext gc))
+            (when px (xlib:free-pixmap px))
+            (when gc (xlib:free-gcontext gc)))
           (let* ((title (funcall *title-source* window)) 
                  (parent (window-parent window))
                  (width (xlib:drawable-width parent))
@@ -129,14 +129,14 @@
 	  (let ((decorator (gethash :decorator (window-plist window))))
         (if decorator
             (funcall decorator)
-            (funcall (setf (gethash :decorator (window-plist window)) (draw-title window)))))))
+            (let ((decorator (draw-title window)))
+              (funcall (setf (gethash :decorator (window-plist window)) decorator))
+              (sb-ext:finalize window (lambda () (funcall decorator :free))))))))
 
   (defun free-decorator (window)
     (let ((decorator (gethash :decorator (window-plist window))))
       (when decorator
         (funcall decorator :free))))
-
-  (add-hook *destroy-window-hook* 'free-decorator)
 
   (defun update-group-decorations (&optional (group (current-group)))
     (dolist (window (group-windows group))
