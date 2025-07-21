@@ -66,17 +66,26 @@ CAR is either any value returned by decode-button-code or T for any unspecified 
 
 (appendf (stumpwm::screen-fonts (car *screen-list*)) (list *stumpwm-font*))
 
+(defun -y-or-n-p (message &optional (prompt "(y or n)"))
+  "Ask a \"y or n\" question on the current screen and return T if the
+user presses 'y'."
+  (message "~a~a" message prompt)
+  (eql (read-one-char (current-screen))
+       #\y))
+
+(setf *startup-message* "^(:font 1)^(:fg \"#4d4d4d\")( Stump^**^(:fg \"#ff7f2a\")WM^**^(:fg \"#4d4d4d\"))^**") 
+
 (defclick lisp-icon ()
   (:left-button
-   (message "^(:font 1)^(:fg \"#4d4d4d\")( Stump^**^(:fg \"#ff7f2a\")WM^**^(:fg \"#4d4d4d\"))^**")
+   (message *startup-message*)
    (x-setup))
   (:middle-button
-   (when (stumpwm::y-or-n-p (format nil "Do you want to shutdown?~%"))
-     (when (stumpwm::y-or-n-p (format nil "Are you sure?~%"))
+   (when (-y-or-n-p (format nil "^1Do you want to shutdown?~%^*") "(^2y^* or ^1n^*)")
+     (when (-y-or-n-p (format nil "^1Are you sure?~%^*") "(^2y^* or ^1n^*)")
        (run-program "shutdown now")))
    (clear-messages))
   (:right-button
-   (when (stumpwm::y-or-n-p (format nil "Auto run programs?~%"))
+   (when (-y-or-n-p (format nil "Auto run programs?~%"))
      (auto-start))
    (clear-messages)))
 
@@ -130,10 +139,10 @@ CAR is either any value returned by decode-button-code or T for any unspecified 
       (refresh-mode-line))))
 
 (defun window-title-formatter (window)
-  (string-upcase (cond
-                   ((search "steam" (window-class window)) (window-title window))
-                   (t (window-class window)))
-                 :end 1))
+  (let ((title (cond ((search "steam" (window-class window)) (window-title window))
+                     (t (window-class window)))))
+    (unless (zerop (length title))
+      (string-upcase title :end 1))))
 
 (appendf *window-formatters* '((#\N window-title-formatter)))
 (setf *window-format* "(%n . %N)")

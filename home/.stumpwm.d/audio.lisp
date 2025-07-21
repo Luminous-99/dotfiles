@@ -35,17 +35,25 @@
 (defcommand volume-mute () ()
   (run-shell-command "~/.stumpwm.d/scripts/volume_notify.sh Mute"))
 
-(defun get-pactl-applications ()
-  (flet ((simplify-list (string)
-           (unless (zerop (length string))
-             (if (char= #\S (aref string 0))
-                 (string-trim '(#\#) (car (last (uiop:split-string string :separator '(#\Space)))))
-                 (string-downcase (string-trim '(#\" #\ ) (second (uiop:split-string (string-trim '(#\Space #\Tab) string) :separator '(#\=)))))))))
-    (let* ((pactl-output (run-shell-command "pactl list sink-inputs | grep -e node.name -e ' #[0-9]*'" t))
-           (output-list (mapcar #'simplify-list (uiop:split-string pactl-output :separator '(#\Newline)))))
-      (loop for (x y) on output-list by #'cddr
-            when x
-              collect (cons y x)))))
+(defun list->alist (list &optional reverse)
+  (loop for (k v) on list by #'cddr
+        if reverse
+          collect (cons v k)
+        else
+          collect (cons k v)))
+
+(flet ((name-or-id (string)
+         (unless (zerop (length string))
+           (if (char= #\S (aref string 0))
+               (cadr (split-string string '(#\#)))
+               (string-trim '(#\Space #\" #\') (cadr (split-string string '(#\=))))))))
+  (defun get-pactl-applications ()
+    (with-input-from-string (sink-inputs (run-shell-command "pactl list sink-inputs" t))
+      (let ((list (loop for line = (read-line sink-inputs nil nil)
+                                 while line
+                                 when (ppcre:scan "(node\\.name|t #[0-9]*)" line)
+                                   collect (name-or-id line))))
+        (list->alist list t)))))
 
 (defun set-application-volume (class volume)
   "Set an application's VOLUME."
