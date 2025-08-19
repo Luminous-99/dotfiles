@@ -1,5 +1,5 @@
 (defpackage misc
-  (:use :cl :stumpwm :clx-truetype :trivial-gray-streams)
+  (:use :cl :stumpwm :clx-truetype)
   (:export
    #:define-keys
    #:undefine-keys

@@ -6,12 +6,12 @@
   (:import-from :stumpwm
                 #:find-group
                 #:switch-to-group
+                #:gravity-for-window
                 #:if-let)
   (:export
    #:float-unless-maximized
    #:sort-current-group
    #:set-floating
-   #:list-all-windows
    #:float-move-resize
    #:*resizing-mode*
    #:*resize-increment*
@@ -21,6 +21,7 @@
    #:iresize-float
    #:close-window-and-frame
    #:terminate-this
+   #:terminate-by-number
    #:toggle-float
    #:delete-split
    #:split-horizontal
@@ -29,7 +30,15 @@
    #:renumber-to-previous
    #:split-vertical
    #:clear-messages
-   #:*window-preferences*))
+   #:*window-preferences*
+   #:eval-line
+   #:withdraw-all-windows
+   #:wallpaper-mode
+   #:restore-newest-window
+   #:restore-oldest-window
+   #:withdraw-window
+   #:restore-all-windows
+   #:restore-window))
 
 (in-package :windows)
 
@@ -46,7 +55,7 @@
       *message-window-padding* 15
       *message-window-y-padding* 15)
 
-(set-msg-border-width 1) 
+(set-msg-border-width 1)
 (set-border-color *foreground-color*)
 
 (defun (setf stumpwm::window-property) (value window property)
@@ -151,19 +160,17 @@
   (toggle-gaps))
 
 (defcommand terminate-this () ()
-  (let ((window (current-window)))
-    (delete-window window)
+  (delete-window)
+  (toggle-gaps))
+
+(defcommand terminate-by-number (&optional number) ((:number "Window number: "))
+  (let ((window (find number (stumpwm::sort-windows-by-number (current-group))
+                      :key #'window-number :test #'=)))
+    (stumpwm::destroy-window window)
     (toggle-gaps)))
 
 (defcommand toggle-float (&optional (window (current-window))) ()
-  (if (stumpwm::float-window-p window)
-      (set-floating window nil)
-      (set-floating window t)))
-
-(defun list-all-windows ()
-  (apply #'append
-         (loop for group in (screen-groups (current-screen))
-               collect (stumpwm::list-windows group))))
+  (set-floating window (not (stumpwm::float-window-p window))))
 
 (defcommand delete-split () ()
   (remove-split)
@@ -196,6 +203,7 @@
   ("s" . "split-vertical")
   ("S" . "split-horizontal")
   ("k" . "terminate-this")
+  ("K" . "terminate-by-number")
   ("C-n" . "renumber-to-next")
   ("C-p" . "renumber-to-previous")
   ("Up" . "move up")
@@ -264,7 +272,8 @@
 (define-window-preferences
   (:class "Emacs" :window-number 0 :group-name "Group 1")
   (:class "firefox" :window-number 1 :group-name "Group 1")
-  (:class "vesktop" :window-number 0 :group-name "Group 2")
+  (:class "discord" :window-number 0 :group-name "Group 2")
+  (:class "thunderbird" :window-number 0 :group-name "Group 3")
   (:class "Spotify" :window-number 1 :group-name "Group 2"))
 
 (define-key *root-map* (kbd "W") "place-all-windows")
@@ -275,7 +284,8 @@
 
 (defcommand withdraw-all-windows (&optional (group (current-group))) ()
   (dolist (window (group-windows group))
-    (stumpwm::withdraw-window window)))
+    (handler-case (stumpwm::withdraw-window window)
+      (error (err) (err "~a" err)))))
 
 (flet ((window-from-menu ()
          (let ((windows (stumpwm::screen-withdrawn-windows (current-screen))))
@@ -285,12 +295,12 @@
       (let* ((windows (group-windows (current-group)))
              (windows (stumpwm::sort-windows-by-number windows))
              (restored-number (gethash :number (window-plist window)))
-             (obstruction (find restored-number  windows :key #'window-number :test #'=)))
-        (stumpwm::restore-window window)
+             (obstruction (find (or restored-number (window-number window)) windows :key #'window-number :test #'=)))
         (if obstruction
             (setf (window-number obstruction) (window-number window)
                   (window-number window) restored-number)
-            (setf (window-number window) restored-number))))))
+            (setf (window-number window) restored-number))
+        (stumpwm::restore-window window)))))
 
 (defcommand restore-newest-window () ()
   (restore-window (car (stumpwm::screen-withdrawn-windows (current-screen)))))
@@ -300,7 +310,8 @@
 
 (defcommand restore-all-windows () ()
   (dolist (window (stumpwm::screen-withdrawn-windows (current-screen)))
-    (restore-window window)))
+    (handler-case (restore-window window)
+      (error (err) (err "~a" err)))))
 
 (let ((wallpaper-mode nil))
   (defcommand wallpaper-mode () ()
@@ -353,5 +364,66 @@
 
 (setf (stumpwm::window-property (stumpwm::screen-message-window (current-screen)) :_STUMPWM_FLOATING) 1)
 (setf (stumpwm::window-property (stumpwm::screen-message-window (current-screen)) :WM_CLASS) :STUMPWM_MESSAGE)
-(setf (stumpwm::window-property (stumpwm::screen-input-window (current-screen)) :_STUMPWM_FLOATING) 1)
-(setf (stumpwm::window-property (stumpwm::screen-input-window (current-screen)) :WM_CLASS) :STUMPWM_MESSAGE)
+
+;; Future work, needs more thought put into
+;; (defun float-window-by-hints (window)
+;;   #+nil(let* ((xwin (window-xwin window))
+;;          (id (xlib:get-property xwin :_NET_WM_WINDOW_TYPE))
+;;          (type (when id (xlib:atom-name *display* (car id))))
+;;          (normal-hints (xlib:wm-normal-hints xwin))
+;;          (width (or (xlib:wm-size-hints-width normal-hints)
+;;                     (window-width window)))
+;;          (height (or (xlib:wm-size-hints-height normal-hints)
+;;                      (window-height window)))
+;;          (x (xlib:wm-size-hints-x normal-hints))
+;;          (y (xlib:wm-size-hints-y normal-hints))
+;;          (gravity (gravity-for-window window))
+;;          (screen-width (screen-width (current-screen)))
+;;          (screen-height (screen-height (current-screen))))
+;;     (multiple-value-bind (gx gy) (gravity-coords gravity width height 0 0 screen-width screen-height)
+;;       (cond ((some (lambda (x) (eq type x)) '(:_NET_WM_WINDOW_TYPE_DIALOG
+;;                                          :_NET_WM_WINDOW_TYPE_TOOLBAR
+;;                                          :_NET_WM_WINDOW_TYPE_UTILITY
+;;                                          :_NET_WM_WINDOW_TYPE_SPLASH))
+;;              (set-floating window t)
+;;              (float-move-resize window :x (or x gx) :y (or y gy)))
+;;             ((or (xlib::wm-size-hints-user-specified-size-p normal-hints)
+;;                  (xlib::wm-size-hints-program-specified-size-p normal-hints))
+;;              (when (and x y)
+;;                (set-floating window t))
+;;              (float-move-resize window :width width :height height :x (or x gx) :y (or y gy)))))))
+
+;; (in-package :stumpwm)
+
+;; (define-stump-event-handler :map-request (parent send-event-p window)
+;;   (unless send-event-p
+;;     ;; This assumes parent is a root window and it should be.
+;;     (dformat 3 "map request: ~a ~a ~a~%" window parent (find-window window))
+;;     (let ((screen (find-screen parent))
+;;           (win (find-window window))
+;;           (wwin (find-withdrawn-window window)))
+;;       ;; only absorb it if it's not already managed (it could be iconic)
+;;       (cond
+;;         (win (dformat 1 "map request for mapped window ~a~%" win))
+;;         ((eq (xwin-type window) :dock)
+;;          (when wwin
+;;            (setf screen (window-screen wwin)))
+;;          (dformat 1 "window is dock-type. attempting to place in mode-line.")
+;;          (place-mode-line-window screen window)
+;;          ;; Some panels are broken and only set the dock type after they map and withdraw.
+;;          (when wwin
+;;            (setf (screen-withdrawn-windows screen) (delete wwin (screen-withdrawn-windows screen))))
+;;          t)
+;;         (wwin (restore-window wwin))
+;;         ((xlib:get-property window :_KDE_NET_WM_SYSTEM_TRAY_WINDOW_FOR)
+;;          ;; Do nothing if this is a systray window (the system tray
+;;          ;; will handle it, if there is one, and, if there isn't the
+;;          ;; user doesn't want this popping up as a managed window
+;;          ;; anyway.
+;;          t)
+;;         (t
+;;          (xlib:with-server-grabbed (*display*)
+;;            (let ((window (process-mapped-window screen window)))
+;;              (group-raise-request (window-group window) window :map)
+;;              (handler-case (windows::float-window-by-hints window)
+;;                (error (err) (err "~a" err))))))))))
