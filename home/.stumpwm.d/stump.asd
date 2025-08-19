@@ -9,4 +9,5 @@
                (:file "windows")
                (:file "audio")
                (:file "mode-line")
-               (:file "window-decorator")))
+               (:file "window-decorator")
+               (:file "input")))
