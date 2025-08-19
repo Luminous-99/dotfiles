@@ -14,10 +14,6 @@ shopt -s checkwinsize
 alias ls='ls --color=auto'
 alias grep='grep --color=auto'
 
-#Bash Prompt
-#original
-#PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\e[01;32m\]\u@\h\[\e[00m\]:\[\e[01;34m\]\w\[\e[00m\]\$"
-
 time="\[\e[1;36m\]\d \t"
 name="\[\e[1;33m\]\u@\h"
 workspace="\[\e[1;36m\]\w"
@@ -25,7 +21,7 @@ new_line="\n"
 upper_container="$workspace"
 
 export PROMPT_DIRTRIM=3
-export PS1="$new_line $workspace ${debian_chroot:+($debian_chroot)}\[\e[0;36m\]λ \[\e[00m\]"
+export PS1=" $workspace \[\e[0;36m\]λ \[\e[00m\]"
 
 function mkcd() { 
     if [ -z "$1" ]; then
@@ -77,4 +73,4 @@ function fman () {
 	| xargs -r man
 }
 
-eval "$(_AUTO_CPUFREQ_COMPLETE=bash_source auto-cpufreq)"
+[ -f "/bin/auto-cpufreq" ] && eval "$(_AUTO_CPUFREQ_COMPLETE=bash_source auto-cpufreq)"
