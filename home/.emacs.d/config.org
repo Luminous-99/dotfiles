@@ -313,9 +313,19 @@ Enables Emmet and Web mode.
     (let ((note (slime-note-at-point)))
       (slime-show-note note)))
 
+  (defun slime-eval-pprint-last-expression ()
+    (interactive)
+    (insert (slime-eval `(swank:pprint-eval ,(slime-last-expression)))))
+
   (set-keys lisp-mode-map
             "C-c p" 'quickload
-            "C-c C-p" 'quickload
+            "C-c C-p" 'slime-eval-pprint-last-expression
+            "C-c C-a" 'load-asdf-system
+            "C-c e" 'slime-show-current-note)
+
+  (set-keys slime-mode-map
+            "C-c p" 'quickload
+            "C-c C-p" 'slime-eval-pprint-last-expression
             "C-c C-a" 'load-asdf-system
             "C-c e" 'slime-show-current-note)
 #+end_src
