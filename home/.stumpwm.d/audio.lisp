@@ -17,7 +17,9 @@
    #:get-pactl-applications
    #:set-application-volume
    #:set-volume-from-menu
-   #:toggle-application-mute))
+   #:toggle-application-mute
+   #:toggle-mute-from-menu
+   #:volume-Value))
 
 (in-package :audio)
 
@@ -66,14 +68,14 @@
     (run-formatted "pactl set-sink-input-mute ~a toggle" (cdr (assoc (string-downcase class) applications :test #'string=)))))
 
 (defcommand set-volume-from-menu () ()
-  (when-let* ((window (stumpwm::select-window-from-menu (list-all-windows) "%c" "App:"))
+  (when-let* ((window (stumpwm::select-window-from-menu (screen-windows (current-screen)) "%c" "App:"))
               (class (window-class window))
               (volume (read-one-line (current-screen) "Volume: ")))
     (set-application-volume class (parse-integer volume)))
   (values))
 
 (defcommand toggle-mute-from-menu () ()
-  (when-let* ((window (stumpwm::select-window-from-menu (list-all-windows) "%c" "App to mute:"))
+  (when-let* ((window (stumpwm::select-window-from-menu (screen-windows (current-screen)) "%c" "App to mute:"))
               (class (window-class window)))
     (toggle-application-mute class))
   (values))
@@ -110,7 +112,7 @@
   (values))
 
 (defcommand toggle-track () ()
-  (run-program (format nil ".stumpwm.d/scripts/player_notify.sh ~a" *player*))
+  (run-program (format nil "~~/.stumpwm.d/scripts/player_notify.sh ~a" *player*))
   (run-program (format nil "playerctl --player=~a play-pause" *player*)))
 
 (defcommand next-track () ()
