@@ -7,8 +7,10 @@
   (setf gc-cons-threshold (* 300 1000 1000))
   (add-hook 'emacs-startup-hook
             (lambda ()
-              (setq gc-cons-threshold (* 1000 1000))))
-  (set-face-attribute 'default nil :family "0xProto Nerd Font" :height 120)
+              (setq gc-cons-threshold (* 1000 1000))
+              (message (emacs-init-time))))
+
+  (set-face-attribute 'default nil :family "IosevkaCustom Nerd Font" :height 130)
   (menu-bar-mode 0)
   (tool-bar-mode 0)
   (scroll-bar-mode 0)
@@ -30,11 +32,14 @@
   (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
   (package-initialize)
 
-  (setf files-to-load '(misc theme completion gnus evil lsp org slime web prettify projects)
-        configuration-path (expand-file-name "~/.emacs.d/lisp/"))
+  (setf configuration-files-path (expand-file-name "~/.emacs.d/lisp/")
+        files-to-load (mapcar (lambda (file)
+                                (format "%s%s.el" configuration-files-path file))
+                              '(misc theme completion gnus evil lsp org slime web prettify projects)))
 
-  (defun load-config (name)
-    (load (format "%s%s" configuration-path name)))
+  (defun load-config (file)
+    (load file))
+
 #+end_src
 ** Thing that don't deserve their own file
 #+begin_src emacs-lisp :tangle init.el
@@ -177,33 +182,35 @@ Setup projectile for project management.
   ;; -*- lexical-binding: t; -*-
   (ligature-set-ligatures '(prog-mode) (mapcar #'(lambda (x) (if (symbolp x) (symbol-name x) x))
                                                `(-> <- => =>> >=> =>=
-                                                                  =<< =<= <=< <=> >> >>>
-                                                                  << <<< <> <|> == ===
-                                                                  .= := "#=" != !== =!=
-                                                                  =:= :: ::: :<: :>: ||
-                                                                  |> ||> |||> <| <|| <|||
-                                                                  ,** *** <* <*> *> <+
-                                                                  <+> +> <$ <$> $> &&
-                                                                  ?? %% "[|" "|]" // ///)))
+                                                    =<< =<= <=< <=> >> >>>
+                                                    << <<< <> <|> == ===
+                                                    .= := "#=" != !== =!=
+                                                    =:= :: ::: :<: :>: ||
+                                                    |> ||> |||> <| <|| <|||
+                                                    ,** *** <* <*> *> <+
+                                                    <+> +> <$ <$> $> &&
+                                                    ?? %% "[|" "|]" // ///)))
 
   (ligature-set-ligatures '(org-mode) (mapcar #'(lambda (x) (if (symbolp x) (symbol-name x) x))
-                                                            `(-> <- => =>> >=> =>=
-                                                                 =<< =<= <=< <=> >> >>>
-                                                                 << <<< <> <|> == ===
-                                                                 .= := "#=" != !== =!=
-                                                                 =:= :: ::: :<: :>: ||
-                                                                 |> ||> |||> <| <||
+                                              `(-> <- => =>> >=> =>=
+                                                   =<< =<= <=< <=> >> >>>
+                                                   << <<< <> <|> == ===
+                                                   .= := "#=" != !== =!=
+                                                   =:= :: ::: :<: :>: ||
+                                                   |> ||> |||> <| <||
                                                    <||| <* <*> *> <+
-                                                                 <+> +> <$ <$> $> &&
-                                                                 ?? %% "[|" "|]" // ///)))
+                                                   <+> +> <$ <$> $> &&
+                                                   ?? %% "[|" "|]" // ///)))
 
   (global-ligature-mode 1)
 #+end_src
 * Prettify
 #+begin_src emacs-lisp :tangle lisp/prettify.el
   ;; -*- lexical-binding: t; -*-
+  (set-face-attribute 'default nil :family "IosevkaCustom Nerd Font" :height 130)
   (use-package nerd-icons
-    :ensure t)
+    :ensure t
+    :custom (nerd-icons-font-family (face-attribute 'default :family)))
 
   (defun prettify ()
     (setf prettify-symbols-alist '(("lambda" . ?λ)
@@ -215,7 +222,7 @@ Setup projectile for project management.
   (add-hook 'prog-mode-hook #'prettify)
   (add-hook 'org-mode-hook #'prettify)
 
-  (load-config "ligatures")
+  (load-config "~/.emacs.d/lisp/ligatures.el")
 #+end_src
 * Web
 ** Javascript/Typescript

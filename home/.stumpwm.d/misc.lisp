@@ -44,7 +44,7 @@
     (swank:create-server :port 4005
                          :style swank:*communication-style*
                          :dont-close t)
-    (echo-string (current-screen) "Starting swank. Do \"M-x slime-connect.\"")
+    (message "Starting swank. Do \"M-x slime-connect.\"")
     (setf *swank-running* t)))
 
 (run-swank)
@@ -73,13 +73,14 @@
 ;; (set-font "-misc-0xproto nerd font-medium-r-normal--17-110-110-110-p-0-iso8859-16")
 ;; -------------------------
 
-(dolist (path '("/usr/share/fonts/TTF" "/usr/share/fonts/OTF"))
+(dolist (path '("/usr/share/fonts/TTF" "/usr/share/fonts/OTF" "~/.local/share/fonts/"))
   (pushnew path xft:*font-dirs* :test #'string=)) 
+
 (defparameter *font*
   (make-instance 'xft:font
-                 :family "0xProto Nerd Font"
+                 :family "IosevkaCustom Nerd Font"
                  :subfamily "Regular"
-                 :size 12
+                 :size 13.5
                  :antialias t))
 
 (set-font *font*)
@@ -151,8 +152,8 @@
                                 keys)))
      (undefine-key ,map key)))
 
-(dolist (kmap `(,@(stumpwm::top-maps) *root-map* stumpwm::*tile-group-root-map* stumpwm::*group-root-map*))
-  (undefine-keys (eval kmap)
+(dolist (kmap (append (mapcar #'symbol-value (stumpwm::top-maps)) (list *root-map* stumpwm::*tile-group-root-map* stumpwm::*group-root-map*)))
+  (undefine-keys kmap
     "a"
     "C-a"
     (stumpwm::make-key :keysym -1)
@@ -304,3 +305,4 @@
 (define-keys *root-map*
   ("u" . "universal-argument")
   ("M" . "mode-line"))
+
