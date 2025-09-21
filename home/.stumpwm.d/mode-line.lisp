@@ -12,19 +12,6 @@
 
 (in-package :mode-line)
 
-(defun display-groups-with-window-name ()
-  (let ((groups (copy-list (screen-groups (current-screen)))))
-    (loop for group in (sort groups #'< :key #'group-number)
-          if (= (group-number (current-group))
-                (group-number group))
-            collect (format nil "^R[~a ~a]^r "
-                            (group-number group)
-                            (if-let ((window (current-window)))
-                              (window-class window)
-                              ""))
-          else
-            collect (format nil "[~a] " (group-number group)))))
-
 (defmacro defclick (name (&rest arguments) &body body)
   "Define an on click function for the modeline. BODY is a list of lists where
 CAR is either any value returned by decode-button-code or T for any unspecified match."
@@ -57,6 +44,10 @@ CAR is either any value returned by decode-button-code or T for any unspecified 
 
 (defclick previous-track-click ()
   (t (previous-track)))
+
+(defclick volume-text-click ()
+  (:after (update-all-mode-lines))
+  (t (volume-mute)))
 
 (defparameter *stumpwm-font*
   (make-instance 'xft:font
@@ -175,24 +166,25 @@ user presses 'y'."
       ""
       (format nil " (^2󰁹^* ~a)" (battery-portable::fmt-bat modeline))))
 
-(add-screen-mode-line-formatter  #\B #'battery-fmt)
+(defun volume-formatter (modeline)
+  (declare (ignorable modeline))
+  (let ((volume (volume-value)))
+    (format nil " ~a~:[ ~;%~]" volume (digit-char-p (schar volume 0)))))
+
+(add-screen-mode-line-formatter #\B #'battery-fmt)
+(add-screen-mode-line-formatter #\V #'volume-formatter)
 
 (let ((format (with-formatting
                 (:on-click :lisp-icon "   ")
                 (:on-click :add-group-click "(gnew)")
                 (:on-click :groups-click " '(%g)")
                 (:on-click :windows-click " '(%W)")
-                "^>"
-                "( "
+                "^>( "
                 (:on-click :music-player-click (:eval *track*))
-                (:eval
-                 (concatenate 'string " " (volume-value) "%"))
+                (:on-click :volume-text-click "%V")
                 (:on-click :previous-track-click "  ") 
-                (:on-click :next-track-click " ")
-                ") "
-                "(%C) (%M)"
-                "%B"
-                " (%d)")))
+                (:on-click :next-track-click "  ")
+                ") (%C) (%M)%B (%d)")))
   (setf *screen-mode-line-format* format))
 
 (enable-mode-line (current-screen) (current-head) t)
