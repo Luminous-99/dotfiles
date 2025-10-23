@@ -66,7 +66,6 @@
 (set-float-focus-color "#555555") 
 (set-float-unfocus-color *background-color*)
 
-
 ;; xfontsel example just in case.
 ;; -------------------------
 ;; -misc-0xproto nerd font-medium-r-normal--12-120-100-100-p-0-iso8859-16
@@ -94,15 +93,22 @@
              (string (format nil "\\\"~A\\\"" sexp))
              (symbol (string-downcase sexp))
              (t sexp))))
-  (defmacro with-emacs (&body body)
-    "Call Elisp code as directly from common lisp as Sexps."
+  (defmacro with-emacs ((&rest variable-names) &body body)
+    "Call Elisp code as directly from common lisp as Sexps.
+VARIABLE-NAMES are the variables used in your common lisp to be evaluated before being sent to emacs."
     (let* ((body (mapcar #'sanitize-sexp body))
-           (body (format nil "emacsclient --eval \"(progn ~{~A~^ ~})\"" body)))
-      `(values (run-shell-command ,body) ,body))))
+           (let-symbols (format nil "~{(~(~S~) '~~S)~^ ~}" variable-names)))
+      (let ((let (gensym "LET")))
+        `(let* ((,let (format nil ,let-symbols ,@variable-names))
+                (,let (format nil "(let (~A) ~{~A~^ ~})" ,let ',body)))
+           (run-shell-command (format nil "emacsclient --eval ~S" ,let)))))))
 
 (defcommand x-setup () ()
   "Setup X11 related stuff."
+  (set-prefix-key (kbd "F20"))
   (run-shell-commands
+   ;; Set compose key
+   "xmodmap -e \"keycode 96 = Multi_key\""
    ;; change Left Windows key to F20 key
    "xmodmap -e \"clear mod4\""
    "xmodmap -e \"add mod4 = Super_R\""
@@ -110,20 +116,17 @@
    ;; change Menu key to Hyper key
    "xmodmap -e \"keycode 135 = Hyper_R\""
    "xmodmap -e \"add mod3 = Hyper_R\""
-   "xsetroot -cursor_name left_ptr")
-  (set-prefix-key (kbd "F20")))
+   "xsetroot -cursor_name left_ptr"))
 
 (x-setup)
 
-(defun window-exists? (class)
-  (let ((windows (group-windows (current-group))))
-    (loop for window in windows
-          when (string= (window-class window) class)
-            return t)))
+(defun window-exists-p (class &optional case-insensitive-p)
+  (find class (group-windows (current-group))
+        :key #'window-class :test (if case-insensitive-p #'string-equal #'string=)))
 
 (defun run-program (command &optional (class nil))
   (if class
-      (unless (window-exists? class)
+      (unless (window-exists-p class)
         (uiop:launch-program command))
       (uiop:launch-program command)))
 
@@ -244,10 +247,9 @@
   (run-shell-command "flameshot gui"))
 
 (defcommand mail (&optional (to "") (subject "")) ((:string "To: ") (:string "Subject: "))
-  (let* ((sexp (format nil "(compose-mail \\\"~a\\\" \\\"~a\\\")" to subject))
-         (sexp (format nil "(progn ~a (raise-frame))" sexp))
-         (cmd (format nil "emacsclient --eval \"~a\"" sexp)))
-    (run-shell-command cmd)))
+  (with-emacs (to subject)
+    (compose-mail to subject)
+    (raise-frame)))
 
 (define-keys *top-map*
   ("Print" . "screenshot")
