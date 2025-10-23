@@ -1,5 +1,5 @@
 (defpackage windows
-  (:use :cl :stumpwm :misc :contrib)
+  (:use :cl :stumpwm :misc :contrib :window-decorator)
   (:import-from :alexandria
                 #:when-let*
                 #:when-let)
@@ -20,6 +20,8 @@
    #:move
    #:iresize-float
    #:close-window-and-frame
+   #:xprop
+   #:terminate
    #:terminate-this
    #:terminate-by-number
    #:toggle-float
@@ -153,15 +155,22 @@
         ("RET" . "iresize-float"))
       (undefine-keys *top-map* "Left" "Right" "Up" "Down" "RET")))
 
-(defcommand close-window-and-frame () ()
-  (unless (only-one-frame-p)
-    (delete-window)
-    (remove-split))
+(defcommand terminate (window) ()
+  (free-decorator window)
+  (delete-window window)
   (toggle-gaps))
 
+(defcommand close-window-and-frame () ()
+  (handler-case
+      (unless (only-one-frame-p)
+        (let ((window (current-window)))
+          (delete-split)
+          (terminate window)))
+    (error (err)
+      (err "~A" err))))
+
 (defcommand terminate-this () ()
-  (delete-window)
-  (toggle-gaps))
+  (terminate (current-window)))
 
 (defcommand terminate-by-number (&optional number) ((:number "Window number: "))
   (let ((window (find number (stumpwm::sort-windows-by-number (current-group))
@@ -194,6 +203,9 @@
 (defcommand clear-messages () ()
   (stumpwm::unmap-message-window (current-screen)))
 
+(defcommand xprop () ()
+  (message (run-shell-command (format nil "xprop -id ~A" (stumpwm::window-id (current-window))) t)))
+
 (define-keys *root-map*
   ("f" . "toggle-float")
   ("F" . "toggle-always-on-top")
@@ -211,6 +223,8 @@
   ("Right" . "move right")
   ("Down" . "move down")
   ("ESC" . "clear-messages")
+  ("M-x" . "xprop")
+  ("C-m" . "copy-last-message")
   ("M-Up" . "exchange-direction up")
   ("M-Left" . "exchange-direction left")
   ("M-Right" . "exchange-direction right")

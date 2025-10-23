@@ -13,7 +13,8 @@
    #:*title-padding-x*
    #:*title-padding-y*
    #:*title-source*
-   #:start-decorator-thread))
+   #:start-decorator-thread
+   #:free-decorator))
 
 (in-package :window-decorator)
 
@@ -114,11 +115,10 @@
                      (stumpwm::draw-image-glyphs px gc font x y title))))
                (xlib:copy-area px gc 0 0 width height parent 0 0))))))))
 
-(let* ((locks (make-hash-table :test #'eq))
+(let* ((locks (make-hash-table))
        (locks-lock (bt:make-recursive-lock "group-locks")))
   (dolist (group (screen-groups (current-screen)))
     (setf (gethash group locks) (bt:make-lock (group-name group))))
-
   (defun group-lock (group)
     (sb-thread:with-mutex (locks-lock)
 	  (or (gethash group locks)
@@ -126,22 +126,22 @@
 
   (defmethod stumpwm::update-decoration ((window stumpwm::float-window))
     (sb-thread:with-mutex ((group-lock (window-group window)))
-	  (let ((decorator (gethash :decorator (window-plist window))))
-        (if decorator
-            (funcall decorator)
-            (let ((decorator (draw-title window)))
-              (funcall (setf (gethash :decorator (window-plist window)) decorator))
-              (sb-ext:finalize window (lambda () (funcall decorator :free))))))))
+      (let ((decorator (gethash :decorator (window-plist window))))
+        (unless (eq decorator :freed)
+          (if decorator
+              (funcall decorator)
+              (funcall (setf (gethash :decorator (window-plist window)) (draw-title window)))))))))
 
-  (defun free-decorator (window)
-    (let ((decorator (gethash :decorator (window-plist window))))
-      (when decorator
-        (funcall decorator :free))))
+(defun free-decorator (window)
+  (symbol-macrolet ((decorator (gethash :decorator (window-plist window))))
+    (when decorator
+      (funcall decorator :free)
+      (setf decorator :freed))))
 
-  (defun update-group-decorations (&optional (group (current-group)))
-    (dolist (window (group-windows group))
-      (when (stumpwm::float-window-p window)
-	    (update-decoration window)))))
+(defun update-group-decorations (&optional (group (current-group)))
+  (dolist (window (group-windows group))
+    (when (stumpwm::float-window-p window)
+	  (update-decoration window))))
 
 (defmethod stumpwm::group-button-press :after (group button x y (window stumpwm::float-window))
   (update-decoration window))
