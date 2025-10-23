@@ -280,7 +280,7 @@ Enables Emmet and Web mode.
        (cl:lambda (x)
                   (cl:list (ql-dist:name x)
                            (ql-dist:version (ql-dist:dist x))
-                           (cl:format nil "~:(~A~)"(ql-dist:name (ql-dist:dist x)))))
+                           (cl:format nil "~:(~A~)" (ql-dist:name (ql-dist:dist x)))))
        (ql:system-list))))
 
   (defun quickload (package)
@@ -296,6 +296,14 @@ Enables Emmet and Web mode.
     (interactive (list (let ((systems  (slime-eval '(asdf:registered-systems))))
                          (completing-read "Load System: " systems))))
     (slime-eval-async `(asdf:load-system ,system)))
+
+  (defun load-current-asdf-file ()
+    (interactive)
+    (let* ((file-name (buffer-file-name))
+           (code `(cl:prog1 cl:nil (asdf:load-asd ,file-name))))
+      (slime-eval-async code (lambda (result)
+                               (message "Loaded ASDF file: %S" file-name))
+                        "CL-USER")))
 
   (defun slime-show-current-note ()
     (interactive)
@@ -315,6 +323,7 @@ Enables Emmet and Web mode.
             "C-c p" 'quickload
             "C-c C-p" 'slime-eval-pprint-last-expression
             "C-c C-a" 'load-asdf-system
+            "C-c M-a" 'load-current-asdf-file
             "C-c e" 'slime-show-current-note)
 
   (use-package slime
@@ -326,6 +335,7 @@ Enables Emmet and Web mode.
                 ("C-c p" . quickload)
                 ("C-c C-p" . slime-eval-pprint-last-expression)
                 ("C-c C-a" . load-asdf-system)
+                ("C-c M-a" . load-current-asdf-file)
                 ("C-c e" . slime-show-current-note))
     :config
     (setf inferior-lisp-program "sbcl")
