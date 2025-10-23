@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-mode=$1
-amount=$2
+mode="$1"
+amount="$2"
 send() {
     volume=$(pactl get-sink-volume @DEFAULT_SINK@ | awk '{ print $5 }' | sed "s/[^0-9]*//g")
     muted=$(pactl get-sink-mute @DEFAULT_SINK@ | awk '{ print $2 }')

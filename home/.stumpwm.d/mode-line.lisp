@@ -27,10 +27,6 @@ CAR is either any value returned by decode-button-code or T for any unspecified 
          ,@(cdr after))
        (register-ml-on-click-id ,(make-keyword name) #',name))))
 
-(defmacro with-click (function &body body)
-  `(format nil ,(format nil "^(:on-click :~a)~~a^(:on-click-end)" (string-downcase function))
-           (progn ,@body)))
-
 (defclick music-player-click ()
   (:after (update-all-mode-lines))
   (:left-button (toggle-track))
@@ -60,7 +56,7 @@ CAR is either any value returned by decode-button-code or T for any unspecified 
 (defun -y-or-n-p (message &optional (prompt "(y or n)"))
   "Ask a \"y or n\" question on the current screen and return T if the
 user presses 'y'."
-  (message "~a~a" message prompt)
+  (message "~A~A" message prompt)
   (eql (read-one-char (current-screen))
        #\y))
 
@@ -93,7 +89,7 @@ user presses 'y'."
 
 (defclick add-group-click ()
   ((or :right-button :middle-button :left-button)
-   (gnewbg (format nil "Group ~a" (1+ (length (screen-groups (current-screen))))))
+   (gnewbg (format nil "Group ~A" (1+ (length (screen-groups (current-screen))))))
    (update-all-mode-lines)))
 
 (defclick ml-on-click-switch-to-group (group)
@@ -102,7 +98,7 @@ user presses 'y'."
   (:middle-button
    (stumpwm::kill-group (find-group (current-screen) group) (current-group))
    (update-all-mode-lines))
-  (t (switch-to-group (find-group (current-screen) group))))
+  (t (gselect group)))
 
 (defclick groups-click ()
   (:wheel-up (gnext))
@@ -144,10 +140,10 @@ user presses 'y'."
            (if (and (consp x) (eq (car x) :on-click))
                (let ((last (car (last x))))
                  (if (consp last)
-                     `(list ,(format nil "^(:on-click ~{~s~^ ~})" (cdr (butlast x)))
+                     `(list ,(format nil "^(:on-click ~{~S~^ ~})" (cdr (butlast x)))
                             ,last
                             "^(:on-click-end)")
-                     (format nil "^(:on-click ~{~s~^ ~})~a^(:on-click-end)" (cdr (butlast x)) last)))
+                     (format nil "^(:on-click ~{~S~^ ~})~A^(:on-click-end)" (cdr (butlast x)) last)))
                x)))
     (let ((body (mapcar #'on-click->string body)))
       `',(reverse (loop for x in body
@@ -164,12 +160,14 @@ user presses 'y'."
   (declare (ignorable modeline))
   (if battery-portable::*preferred-drivers-failed*
       ""
-      (format nil " (^2󰁹^* ~a)" (battery-portable::fmt-bat modeline))))
+      (format nil " (^2󰁹^* ~A)" (battery-portable::fmt-bat modeline))))
 
 (defun volume-formatter (modeline)
   (declare (ignorable modeline))
-  (let ((volume (volume-value)))
-    (format nil " ~a~:[ ~;%~]" volume (digit-char-p (schar volume 0)))))
+  (handler-case
+      (let ((volume (volume-value)))
+        (format nil " ~A~:[ ~;%~]" volume (digit-char-p (schar volume 0))))
+    (t () " 0%")))
 
 (add-screen-mode-line-formatter #\B #'battery-fmt)
 (add-screen-mode-line-formatter #\V #'volume-formatter)
