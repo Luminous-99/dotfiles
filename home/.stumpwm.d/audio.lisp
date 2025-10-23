@@ -25,8 +25,8 @@
 
 ;; Volume
 (defcommand volume-value () ()
-  (let ((val (run-shell-command "~/.stumpwm.d/scripts/volume_notify.sh Volume" t)))
-    (subseq val 0 (1- (length val)))))
+  (let ((val (run-formatted "~~/.stumpwm.d/scripts/volume_notify.sh Volume")))
+    val))
 
 (defcommand volume-up () ()
   (run-shell-command "~/.stumpwm.d/scripts/volume_notify.sh Up"))
@@ -52,33 +52,33 @@
   (defun get-pactl-applications ()
     (with-input-from-string (sink-inputs (run-shell-command "pactl list sink-inputs" t))
       (let ((list (loop for line = (read-line sink-inputs nil nil)
-                                 while line
-                                 when (ppcre:scan "(node\\.name|t #[0-9]*)" line)
-                                   collect (name-or-id line))))
+                        while line
+                        when (ppcre:scan "(node\\.name|t #[0-9]*)" line)
+                          collect (name-or-id line))))
         (list->alist list t)))))
 
 (defun set-application-volume (class volume)
   "Set an application's VOLUME."
   (let* ((applications (get-pactl-applications)))
-    (run-formatted "pactl set-sink-input-volume ~a ~a%" (cdr (assoc (string-downcase class) applications :test #'string=)) volume)))
+    (run-formatted "pactl set-sink-input-volume ~A ~A%" (cdr (assoc class applications :test #'string-equal)) volume)))
 
 (defun toggle-application-mute (class)
   "Toggle whether an application is muted."
   (let* ((applications (get-pactl-applications)))
-    (run-formatted "pactl set-sink-input-mute ~a toggle" (cdr (assoc (string-downcase class) applications :test #'string=)))))
+    (run-formatted "pactl set-sink-input-mute ~A toggle" (cdr (assoc class applications :test #'string-equal)))))
 
 (defcommand set-volume-from-menu () ()
   (when-let* ((window (stumpwm::select-window-from-menu (screen-windows (current-screen)) "%c" "App:"))
               (class (window-class window))
               (volume (read-one-line (current-screen) "Volume: ")))
-    (set-application-volume class (parse-integer volume)))
-  (values))
+    (set-application-volume class (parse-integer (remove #\% volume :test #'char=)))
+    (values)))
 
 (defcommand toggle-mute-from-menu () ()
   (when-let* ((window (stumpwm::select-window-from-menu (screen-windows (current-screen)) "%c" "App to mute:"))
               (class (window-class window)))
-    (toggle-application-mute class))
-  (values))
+    (toggle-application-mute class)
+    (values)))
 
 (define-keys *top-map*
   ("XF86AudioRaiseVolume" . "volume-up")
@@ -102,24 +102,26 @@
     (setf *track* (current-track))
     (sleep 1)))
 
+(defun list-players ()
+  (mapcar (lambda (string)
+            (car (uiop:split-string string :separator '(#\.))))
+          (uiop:split-string (run-formatted "playerctl --list-all") :separator '(#\Newline))))
+
 (defcommand set-player () ()
-  (let ((selection (select-from-menu (current-screen)
-                                     (mapcar (lambda (string)
-                                               (car (uiop:split-string string :separator '(#\.))))
-                                             (uiop:split-string (run-formatted "playerctl --list-all") :separator '(#\Newline))))))
+  (let ((selection (select-from-menu (current-screen) (list-players))))
     (when selection
       (setf *player* (car selection))))
   (values))
 
 (defcommand toggle-track () ()
-  (run-program (format nil "~~/.stumpwm.d/scripts/player_notify.sh ~a" *player*))
-  (run-program (format nil "playerctl --player=~a play-pause" *player*)))
+  (run-program (format nil "~~/.stumpwm.d/scripts/player_notify.sh ~A" *player*))
+  (run-program (format nil "playerctl --player=~A play-pause" *player*)))
 
 (defcommand next-track () ()
-  (run-program (format nil "playerctl --player=~a next" *player*)))
+  (run-program (format nil "playerctl --player=~A next" *player*)))
 
 (defcommand previous-track () ()
-  (run-program (format nil "playerctl --player=~a previous" *player*)))
+  (run-program (format nil "playerctl --player=~A previous" *player*)))
 
 (define-keys *root-map*
   ("M-P" . "set-player")

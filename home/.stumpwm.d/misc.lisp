@@ -133,11 +133,12 @@
       (run-program (concatenate 'string name " " args) name))))
 
 (defun run-formatted (fmt &rest args)
-  (string-trim '(#\Newline)
-               (uiop:run-program (apply #'format nil fmt args)
-                                 :output :string
-                                 :error-output :string
-                                 :ignore-error-status t)))
+  (let ((output (string-trim '(#\Newline)
+                             (uiop:run-program (apply #'format nil fmt args)
+                                               :output :string
+                                               :error-output :string
+                                               :ignore-error-status t))))
+    output))
 
 (defmacro define-keys (map &body keys)
   `(dolist (key (list ,@(mapcar (lambda (key) `(cons (kbd ,(car key)) ,(cdr key))) keys)))
