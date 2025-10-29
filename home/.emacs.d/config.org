@@ -50,6 +50,8 @@
        ,@(cl-loop for (key . command) on bindings by #'cddr
                   collect `(keymap-set ,keymap ,key ,(car command)))))
 
+  (set-keys global-map)
+
   (defun replace-defun ()
     "Evaluate current Defun, then replace it with it's return value."
     (interactive)
@@ -61,11 +63,6 @@
            (insert (format "%s" (eval form)))))
         (lisp-mode (delete-region (car region) (cdr region))
                    (slime-eval-print string)))))
-
-  (set-keys global-map
-            "H-r" 'replace-defun
-            "H-s" 'save-sexp
-            "s-h" 'describe-thing-at-point)
 
   (defun save-sexp ()
     "Save sexp in the kill ring."
@@ -81,7 +78,7 @@
     (interactive)
     (let ((thing (symbol-at-point)))
       (cond
-       ((functionp thing) (describe-function thing))
+       ((or (functionp thing) (macrop thing)) (describe-function thing))
        ((or (special-variable-p thing)
             (local-variable-p thing)
             (custom-variable-p thing))
@@ -109,48 +106,47 @@
   (use-package xref
     :defer t
     :config
-    (setf (cdr xref-prompt-for-identifier) (cons 'xref-find-references (cdr xref-prompt-for-identifier))))
+    (setf (cdr xref-prompt-for-identifier)
+          (cons 'xref-find-references (cdr xref-prompt-for-identifier))))
 
   (set-keys emacs-lisp-mode-map
-            "s-d" 'xref-find-definitions
-            "s-r" 'xref-find-references
-            "C-c M-m" 'emacs-lisp-macroexpand
-            "C-c M-e" 'macrostep-expand)
+            "s-d" #'xref-find-definitions
+            "s-r" #'xref-find-references
+            "C-c M-m" #'emacs-lisp-macroexpand
+            "C-c M-e" #'macrostep-expand)
 
   (set-keys global-map
             "H-c" #'describe-char
             "H-f" #'describe-face
             "C-x C-b" #'ibuffer
-            "C-x b" #'consult-buffer)
-
-  (add-to-list 'display-buffer-alist
-               '("\\*Man"
-                 (display-buffer-in-side-window)
-                 (side . right)))
+            "C-x b" #'consult-buffer
+            "s-c" #'chmod
+            "H-r" #'replace-defun
+            "H-s" #'save-sexp
+            "s-h" #'describe-thing-at-point)
 
   (put 'narrow-to-region 'disabled nil)
-
   (use-package grep
     :config
     (grep-apply-setting 'grep-command "grep --color=auto -rnH --null -e ")
     (keymap-global-set "H-g" #'grep))
 
-  ;; somewhat working code that highlights definition forms.
-  ;; (let ((definition-or-setter (rx "("
-  ;;                                 (group
-  ;;                                  (or "def" "set")
-  ;;                                  (zero-or-more (any alnum "-")))))
-  ;;       (defined-symbol (rx "("
-  ;;                           (not (any "," "'"))
-  ;;                           (group "def" (zero-or-more (any alnum "-")))
-  ;;                           (one-or-more space)
-  ;;                           (group (one-or-more (any alnum "-"))))))
-  ;;   (font-lock-add-keywords 'emacs-lisp-mode
-  ;;                           `((,definition-or-setter 1 font-lock-keyword-face prepend)
-  ;;                             (,defined-symbol 2 font-lock-function-name-face prepend)))
-  ;;   (font-lock-add-keywords 'lisp-mode
-  ;;                           `((,definition-or-setter 1 font-lock-keyword-face prepend)
-  ;;                             (,defined-symbol 2 font-lock-function-name-face prepend))))
+  (add-hook 'prog-mode-hook (lambda () (setf tab-width 4 indent-tabs-mode nil)))
+  (add-hook 'python-mode-hook #'lsp)
+  (add-hook 'lisp-mode-hook (lambda () (paredit-mode 1)))
+  (add-hook 'emacs-lisp-mode-hook (lambda () (paredit-mode 1)))
+  (add-hook 'slime-repl-mode-hook (lambda () (paredit-mode 1)))
+
+  (setf display-line-numbers-type 'relative
+        proced-enable-color-flag t
+        frame-resize-pixelwise t
+        warning-minimum-level :error
+        inhibit-startup-screen t
+        backup-directory-alist `((".*" . ,temporary-file-directory))
+        auto-save-file-name-transforms `((".*" ,temporary-file-directory t))
+        browse-url-browser-function '(("hyperspec" . eww-browse-url)
+                                      ("." . browse-url-default-browser))
+        treesit-font-lock-level 4)
 
   (dolist (file files-to-load)
     (load-config file))
@@ -641,12 +637,6 @@ Enables Emmet and Web mode.
 #+end_src
 ** Remainder
 #+begin_src emacs-lisp :tangle lisp/misc.el
-  (add-hook 'prog-mode-hook (lambda () (setf tab-width 4 indent-tabs-mode nil)))
-  (add-hook 'python-mode-hook #'lsp)
-  (add-hook 'lisp-mode-hook (lambda () (paredit-mode 1)))
-  (add-hook 'emacs-lisp-mode-hook (lambda () (paredit-mode 1)))
-  (add-hook 'slime-repl-mode-hook (lambda () (paredit-mode 1)))
-
   (defun scratch-buffer ()
     "Switch to the *scratch* buffer.
      If the buffer doesn't exist, create it first."
@@ -656,15 +646,4 @@ Enables Emmet and Web mode.
 
   (with-current-buffer "*scratch*"
     (emacs-lisp-mode))
-
-  (setf display-line-numbers-type 'relative
-        proced-enable-color-flag t
-        frame-resize-pixelwise t
-        warning-minimum-level :error
-        inhibit-startup-screen t
-        backup-directory-alist `((".*" . ,temporary-file-directory))
-        auto-save-file-name-transforms `((".*" ,temporary-file-directory t))
-        browse-url-browser-function '(("hyperspec" . eww-browse-url)
-                                      ("." . browse-url-default-browser))
-        treesit-font-lock-level 4)
 #+end_src
