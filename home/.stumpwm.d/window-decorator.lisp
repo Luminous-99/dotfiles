@@ -40,8 +40,8 @@
                 title-position))
 (defun title-position (window title)
   (let* ((font (screen-font (current-screen)))
-         (width (line-width (window-xwin window) font title)) 
-         (title-height (font-size font)) 
+         (width (line-width (window-xwin window) font title))
+         (title-height (font-size font))
          (window-title-height *float-window-title-height*)
          (y (floor (+ (/ window-title-height 2.0) (/ title-height 2.0) *title-padding-y*))))
     (case *title-alignment*
@@ -65,55 +65,60 @@
       (screen-float-unfocus-color (window-screen window))
       (screen-float-focus-color (window-screen window))))
 
-(defun draw-title (window)
-  (declare (type stumpwm::float-window window))
-  (let ((previous-title "")
-        (gc nil)
-        (px nil)
-        (old-background 0))
-    (declare (optimize (speed 3) (safety 1)))
-    (lambda (&optional free)
-      (if (eq free :free)
-          (progn
-            (when px (xlib:free-pixmap px))
-            (when gc (xlib:free-gcontext gc)))
-          (let* ((title (funcall *title-source* window)) 
-                 (parent (window-parent window))
-                 (width (xlib:drawable-width parent))
-                 (height *float-window-title-height*)
-                 (depth (xlib:drawable-depth parent))
-                 (font (screen-font (current-screen)))
-                 (background (floating-window-background window))
-                 (foreground (floating-window-foreground window)))
-            (declare (type (simple-array character (*)) title previous-title)
-                     (type fixnum width height background foreground))
-            (setf (xlib:window-background parent) background)
-            (xlib:clear-area parent)
-            (unless px
-              (setf px (xlib:create-pixmap :drawable parent :width width 
-                                           :height height :depth depth))) 
-            (unless gc (setf gc (xlib:create-gcontext :drawable px)))
-            (cond
-              ((not (string= previous-title title))
-               (setf (xlib:drawable-width px) width
-                     (xlib:drawable-height px) height)
-               (setf old-background background)
-               (xlib:with-gcontext (gc :foreground background :background foreground)
-                 (xlib:draw-rectangle px gc 0 0 width height t)) 
-               (xlib:with-gcontext (gc :foreground foreground :background background)
-                 (multiple-value-bind (x y) (title-position window title)
-                   (stumpwm::draw-image-glyphs px gc font x y title)))
-               (xlib:copy-area px gc 0 0 width height parent 0 0)
-               (setf previous-title title))
-              (t
-               (unless (= old-background background)
-                 (setf old-background background)
-                 (xlib:with-gcontext (gc :foreground background :background foreground)
-                   (xlib:draw-rectangle px gc 0 0 width height t)) 
-                 (xlib:with-gcontext (gc :foreground foreground :background background)
-                   (multiple-value-bind (x y) (title-position window title)
-                     (stumpwm::draw-image-glyphs px gc font x y title))))
-               (xlib:copy-area px gc 0 0 width height parent 0 0))))))))
+(defclass decorator (sb-mop:funcallable-standard-object)
+  ((window :initform nil :initarg :window :accessor decorator-window)
+   (pixmap :initform nil :initarg :pixmap :accessor decorator-pixmap)
+   (gcontext :initform nil :initarg :gcontext :accessor decorator-gcontext)
+   (background :initform 0 :initarg :background :accessor decorator-background)
+   (title :initform "" :initarg :title :accessor decorator-title))
+  (:metaclass sb-mop:funcallable-standard-class))
+
+(defmethod initialize-instance :after ((decorator decorator) &key &allow-other-keys)
+  (sb-mop:set-funcallable-instance-function
+   decorator
+   (with-slots (window pixmap gcontext background title) decorator
+     (declare (optimize (speed 3) (safety 1)))
+     (lambda (&optional free)
+       (if (eq free :free)
+           (progn
+             (when pixmap (xlib:free-pixmap pixmap))
+             (when gcontext (xlib:free-gcontext gcontext)))
+           (let* ((current-title (funcall *title-source* window))
+                  (parent (window-parent window))
+                  (width (xlib:drawable-width parent))
+                  (height *float-window-title-height*)
+                  (depth (xlib:drawable-depth parent))
+                  (font (screen-font (current-screen)))
+                  (current-background (floating-window-background window))
+                  (foreground (floating-window-foreground window)))
+             (declare (type (simple-array character (*)) current-title title)
+                      (type fixnum width height current-background foreground background))
+             (setf (xlib:window-background parent) current-background)
+             (xlib:clear-area parent)
+             (setf pixmap (or pixmap (xlib:create-pixmap :drawable parent :width width
+                                                         :height height :depth depth)))
+             (setf gcontext (or gcontext (xlib:create-gcontext :drawable pixmap)))
+             (cond
+               ((not (string= title current-title))
+                (setf (xlib:drawable-width pixmap) width
+                      (xlib:drawable-height pixmap) height
+                      background current-background
+                      title current-title)
+                (xlib:with-gcontext (gcontext :foreground current-background :background foreground)
+                  (xlib:draw-rectangle pixmap gcontext 0 0 width height t))
+                (xlib:with-gcontext (gcontext :foreground foreground :background current-background)
+                  (multiple-value-bind (x y) (title-position window current-title)
+                    (stumpwm::draw-image-glyphs pixmap gcontext font x y current-title)))
+                (xlib:copy-area pixmap gcontext 0 0 width height parent 0 0))
+               (t
+                (unless (= background current-background)
+                  (setf background current-background)
+                  (xlib:with-gcontext (gcontext :foreground current-background :background foreground)
+                    (xlib:draw-rectangle pixmap gcontext 0 0 width height t))
+                  (xlib:with-gcontext (gcontext :foreground foreground :background current-background)
+                    (multiple-value-bind (x y) (title-position window current-title)
+                      (stumpwm::draw-image-glyphs pixmap gcontext font x y current-title))))
+                (xlib:copy-area pixmap gcontext 0 0 width height parent 0 0)))))))))
 
 (let* ((locks (make-hash-table))
        (locks-lock (bt:make-recursive-lock "group-locks")))
@@ -121,8 +126,8 @@
     (setf (gethash group locks) (bt:make-lock (group-name group))))
   (defun group-lock (group)
     (sb-thread:with-mutex (locks-lock)
-	  (or (gethash group locks)
-		  (setf (gethash group locks) (bt:make-lock (group-name group))))))
+      (or (gethash group locks)
+          (setf (gethash group locks) (bt:make-lock (group-name group))))))
 
   (defmethod stumpwm::update-decoration ((window stumpwm::float-window))
     (sb-thread:with-mutex ((group-lock (window-group window)))
@@ -130,7 +135,8 @@
         (unless (eq decorator :freed)
           (if decorator
               (funcall decorator)
-              (funcall (setf (gethash :decorator (window-plist window)) (draw-title window)))))))))
+              (funcall (setf (gethash :decorator (window-plist window))
+                             (make-instance 'decorator :window window)))))))))
 
 (defun free-decorator (window)
   (symbol-macrolet ((decorator (gethash :decorator (window-plist window))))
@@ -141,7 +147,7 @@
 (defun update-group-decorations (&optional (group (current-group)))
   (dolist (window (group-windows group))
     (when (stumpwm::float-window-p window)
-	  (update-decoration window))))
+      (update-decoration window))))
 
 (defmethod stumpwm::group-button-press :after (group button x y (window stumpwm::float-window))
   (update-decoration window))
@@ -151,22 +157,22 @@
   ;; the mapnotify event before the reparent event. that's what fvwm
   ;; says.
   (let* ((xwin (window-xwin window))
-	     (screen-root (screen-root (current-screen)))
-	     (master-window (xlib:create-window
-			             :parent screen-root
-			             :x (xlib:drawable-x (window-xwin window))
-			             :y (xlib:drawable-y (window-xwin window))
-			             :width (window-width window)
-			             :height (window-height window)
-			             :background (if (eq (window-type window) :normal)
-					                     (screen-win-bg-color screen)
-					                     :none)
-			             :border (screen-unfocus-color screen)
-			             :border-width (default-border-width-for-type window)
-			             :event-mask *window-parent-events*
-			             :depth 24 
-			             :visual (xlib:window-visual-info screen-root) 
-			             :colormap (xlib:window-colormap screen-root))))
+         (screen-root (screen-root (current-screen)))
+         (master-window (xlib:create-window
+                         :parent screen-root
+                         :x (xlib:drawable-x (window-xwin window))
+                         :y (xlib:drawable-y (window-xwin window))
+                         :width (window-width window)
+                         :height (window-height window)
+                         :background (if (eq (window-type window) :normal)
+                                         (screen-win-bg-color screen)
+                                         :none)
+                         :border (screen-unfocus-color screen)
+                         :border-width (default-border-width-for-type window)
+                         :event-mask *window-parent-events*
+                         :depth 24
+                         :visual (xlib:window-visual-info screen-root)
+                         :colormap (xlib:window-colormap screen-root))))
     (unless (eq (xlib:window-map-state (window-xwin window)) :unmapped)
       (incf (window-unmap-ignores window)))
     (xlib:reparent-window (window-xwin window) master-window 0 0)
@@ -176,10 +182,10 @@
 
 (defun start-decorator (&optional (delay 0.5))
   (bt:make-thread (lambda ()
-		            (loop
-		              (sleep delay)
-		              (update-group-decorations)))
-		          :name "decorator"))
+                    (loop
+                      (sleep delay)
+                      (update-group-decorations)))
+                  :name "decorator"))
 
 (defun kill-decorator ()
   (bt:destroy-thread (find "decorator" (bt:all-threads) :key #'bt:thread-name :test #'string=)))
