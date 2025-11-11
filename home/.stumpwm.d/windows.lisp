@@ -77,6 +77,8 @@
         (stumpwm::unfloat-window window (current-group))
         (setf (stumpwm::window-property window :_STUMPWM_FLOATING) 0))))
 
+(defsetf stumpwm::float-window-p set-floating)
+
 (defun sort-current-group (&optional window)
   "Sort windows."
   (declare (ignorable window))
@@ -156,7 +158,6 @@
       (undefine-keys *top-map* "Left" "Right" "Up" "Down" "RET")))
 
 (defcommand terminate (window) ()
-  (free-decorator window)
   (delete-window window)
   (toggle-gaps))
 
