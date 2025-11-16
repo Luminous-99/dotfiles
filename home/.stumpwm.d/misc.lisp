@@ -85,7 +85,7 @@
 (set-font *font*)
 
 (defun run-shell-commands (&rest commands)
-  (run-shell-command (format nil "~{~a~^ && ~}" commands) t))
+  (run-shell-command (format nil "~{~A~^ && ~}" commands) t))
 
 (labels ((sanitize-sexp (sexp)
            (typecase sexp

@@ -93,11 +93,11 @@
                   (foreground (floating-window-foreground window)))
              (declare (type (simple-array character (*)) current-title title)
                       (type fixnum width height current-background foreground background))
-             (setf (xlib:window-background parent) current-background)
+             (setf (xlib:window-background parent) current-background
+                   pixmap (or pixmap (xlib:create-pixmap :drawable parent :width width
+                                                         :height height :depth depth))
+                   gcontext (or gcontext (xlib:create-gcontext :drawable pixmap)))
              (xlib:clear-area parent)
-             (setf pixmap (or pixmap (xlib:create-pixmap :drawable parent :width width
-                                                         :height height :depth depth)))
-             (setf gcontext (or gcontext (xlib:create-gcontext :drawable pixmap)))
              (cond
                ((not (string= title current-title))
                 (setf (xlib:drawable-width pixmap) width
@@ -135,27 +135,7 @@
     (funcall decorator :free)
     (setf decorator :freed)))
 
-(in-package :stumpwm)
-(defun destroy-window (window)
-  (declare (type window window))
-  "The window has been destroyed. clean up our data structures."
-  ;; This function cannot request info about WINDOW from the xserver
-  (let ((screen (window-screen window)))
-    (unless (eql (window-state window) +withdrawn-state+)
-      (withdraw-window window))
-    ;; now that the window is withdrawn, clean up the data structures
-    (setf (screen-withdrawn-windows screen)
-          (delete window (screen-withdrawn-windows screen)))
-    (setf (screen-urgent-windows screen)
-          (delete window (screen-urgent-windows screen)))
-    (dformat 1 "destroy window ~a~%" screen)
-    (dformat 3 "freeing window decorator~%" )
-    (dformat 3 "window decorator is ~a~%" (gethash :decorator (window-plist window)))
-    (window-decorator:free-decorator window)
-    (dformat 3 "destroying parent window~%")
-    (dformat 7 "parent window is ~a~%" (window-parent window))
-    (xlib:destroy-window (window-parent window))))
-(in-package :window-decorator)
+(add-hook *destroy-window-hook* 'free-decorator)
 
 (defun update-group-decorations (&optional (group (current-group)))
   (dolist (window (group-windows group))

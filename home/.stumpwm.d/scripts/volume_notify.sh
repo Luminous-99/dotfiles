@@ -24,7 +24,7 @@ send() {
     fi
 }
 
-case $mode in
+case "$mode" in
     Up)
 	    if [ -z "$amount" ]; then
 	        pactl set-sink-volume @DEFAULT_SINK@ +5% 
