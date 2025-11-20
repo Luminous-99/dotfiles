@@ -90,18 +90,26 @@
 (labels ((sanitize-sexp (sexp)
            (typecase sexp
              (cons (mapcar #'sanitize-sexp sexp))
-             (string (format nil "\\\"~A\\\"" sexp))
+             (string (with-input-from-string (si (princ-to-string sexp))
+                       (with-output-to-string (so)
+                         (write-string "\\\"" so)
+                         (loop for char = (read-char si nil nil)
+                               while char
+                               if (or (char= char #\`) (char= char #\'))
+                                 do (format so "\\~A" char)
+                               else do (format so "~A" char))
+                         (write-string "\\\"" so))))
              (symbol (string-downcase sexp))
              (t sexp))))
   (defmacro with-emacs ((&rest variable-names) &body body)
     "Call Elisp code as directly from common lisp as Sexps.
 VARIABLE-NAMES are the variables used in your common lisp to be evaluated before being sent to emacs."
     (let* ((body (mapcar #'sanitize-sexp body))
-           (let-symbols (format nil "~{(~(~S~) '~~S)~^ ~}" variable-names)))
-      (let ((let (gensym "LET")))
-        `(let* ((,let (format nil ,let-symbols ,@variable-names))
-                (,let (format nil "(let (~A) ~{~A~^ ~})" ,let ',body)))
-           (run-shell-command (format nil "emacsclient --eval ~S" ,let)))))))
+           (let-symbols (format nil "~{(~(~S~) '~~S)~^ ~}" variable-names))
+           (let (gensym "LET")))
+      `(let* ((,let (format nil ,let-symbols ,@variable-names))
+              (,let (format nil "(let (~A) ~{~A~^ ~})" ,let ',body)))
+         (run-shell-command (format nil "emacsclient --eval \"~A\"" ,let))))))
 
 (defcommand x-setup () ()
   "Setup X11 related stuff."
@@ -212,7 +220,7 @@ VARIABLE-NAMES are the variables used in your common lisp to be evaluated before
   (run-shell-command "alacritty"))
 
 (defcommand emacs (&optional (file "") (client t)) ()
-  (run-program (format nil "emacs~a ~a" (if client "client --alternate-editor= -c" "") file))
+  (run-program (format nil "emacs~:[~;client --alternate-editor= -c~] ~S" client file))
   file)
 
 #+sbcl (pushnew 'emacs cl-user::*ed-functions*)
@@ -231,9 +239,10 @@ VARIABLE-NAMES are the variables used in your common lisp to be evaluated before
   (defcommand shell-command (&optional cmd) ()
     (let ((cmd (or cmd (completing-read (current-screen) "$ " history)))
           (stumpwm::*input-history* history))
-      (setf (cdr history-tail) (list cmd)
-            history-tail (cdr history-tail))
-      (uiop:launch-program cmd))))
+      (when cmd
+        (setf (cdr history-tail) (list cmd)
+              history-tail (cdr history-tail))
+        (uiop:launch-program cmd)))))
 
 (define-keys *root-map*
   ("d" . "dmenu")
