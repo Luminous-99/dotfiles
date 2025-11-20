@@ -1,5 +1,5 @@
 (defpackage windows
-  (:use :cl :stumpwm :misc :contrib :window-decorator)
+  (:use :cl :stumpwm :misc :contrib :window-preference :scratchpad)
   (:import-from :alexandria
                 #:when-let*
                 #:when-let)
@@ -96,7 +96,7 @@
             do (setf (window-number win2) (1+ num1))))
   (stumpwm::update-all-mode-lines))
 
-(setf *destroy-window-hook* (list 'sort-current-group))
+(add-hook *destroy-window-hook* 'sort-current-group)
 
 (defun float-unless-maximized (window)
   (unless (getf (stumpwm::group-plist (current-group)) :GAPS)
@@ -111,7 +111,7 @@
             (set-floating window t)
             (focus-window window t)))))))
 
-(setf *new-window-hook* (list 'float-unless-maximized))
+(add-hook *new-window-hook* 'float-unless-maximized)
 
 (defparameter *resizing-mode* nil)
 (setf *resize-increment* 20)
@@ -208,6 +208,8 @@
   (message (run-shell-command (format nil "xprop -id ~A" (stumpwm::window-id (current-window))) t)))
 
 (define-keys *root-map*
+  ("o" . '*scratchpad-map*)
+  ("W" . "place-all-windows")
   ("f" . "toggle-float")
   ("F" . "toggle-always-on-top")
   ("R" . "iresize-float")
@@ -234,127 +236,12 @@
 ;; Groups
 (setf (group-name (find-group (current-screen) "Default")) "Group 1")
 
-(defvar *window-preferences* ()
-  "A list of plists that define window preferences.")
-
-(defun define-window-preference (&key class window-number group-name group-number)
-  (let ((preference (list :class class
-                          :window-number window-number
-                          :group-name group-name
-                          :group-number group-number)))
-    (let ((old-preference  (find class *window-preferences*
-                                 :test (lambda (x y)
-                                         (string= x (getf y :class))))))
-      (if old-preference
-          (setf (cdr old-preference) (cdr preference))
-          (push preference *window-preferences*)))))
-
-(defmacro define-window-preferences (&body preferences)
-  (let ((preference (gensym "PREFERENCE")))
-    `(dolist (,preference ',preferences)
-       (apply #'define-window-preference ,preference))))
-
-(defun preference-matches-p (window preference)
-  (when (string= (window-class window) (getf preference :class))
-    preference))
-
-(defun place-windows (&optional (screen (current-screen)))
-  "Place windows according to *WINDOW-PREFERENCES*."
-  (dolist (window (screen-windows screen))
-    (when-let ((preference (find window *window-preferences*
-                                 :test #'preference-matches-p)))
-      (destructuring-bind (&key class window-number group-name group-number)
-          preference
-        (declare (ignorable class))
-        (when window-number
-          (let ((old-window (find window-number (group-windows (window-group window))
-                                  :key #'window-number :test #'=)))
-            (if old-window
-                (setf (window-number old-window) (window-number window)
-                      (window-number window) window-number)
-                (setf (window-number window) window-number))))
-        (cond
-          ((and group-name (not (string= group-name (group-name (window-group window)))))
-           (move-window-to-group window (find-group screen group-name)))
-          ((and group-number (not (= group-number (group-number (window-group window)))))
-           (let ((group (find group-number (screen-groups screen)
-                              :test #'= :key #'group-number)))
-             (move-window-to-group window group))))))))
-
-(defcommand place-all-windows (&optional (screen (current-screen))) ()
-  (place-windows screen))
-
 (define-window-preferences
   (:class "Emacs" :window-number 0 :group-name "Group 1")
   (:class "firefox" :window-number 1 :group-name "Group 1")
   (:class "discord" :window-number 0 :group-name "Group 2")
   (:class "thunderbird" :window-number 0 :group-name "Group 3")
   (:class "Spotify" :window-number 1 :group-name "Group 2"))
-
-(define-key *root-map* (kbd "W") "place-all-windows")
-
-(defcommand withdraw-window (&optional (window (current-window))) ()
-  (setf (gethash :number (window-plist window)) (window-number window))
-  (stumpwm::withdraw-window window))
-
-(defcommand withdraw-all-windows (&optional (group (current-group))) ()
-  (dolist (window (group-windows group))
-    (handler-case (stumpwm::withdraw-window window)
-      (error (err) (err "~a" err)))))
-
-(flet ((window-from-menu ()
-         (let ((windows (stumpwm::screen-withdrawn-windows (current-screen))))
-           (and windows (stumpwm::select-window-from-menu windows *window-format*)))))
-  (defcommand restore-window (&optional (window (window-from-menu))) ()
-    (when window
-      (let* ((windows (group-windows (current-group)))
-             (windows (stumpwm::sort-windows-by-number windows))
-             (restored-number (gethash :number (window-plist window)))
-             (obstruction (find (or restored-number (window-number window)) windows :key #'window-number :test #'=)))
-        (if obstruction
-            (setf (window-number obstruction) (window-number window)
-                  (window-number window) restored-number)
-            (setf (window-number window) restored-number))
-        (stumpwm::restore-window window)))))
-
-(defcommand restore-newest-window () ()
-  (restore-window (car (stumpwm::screen-withdrawn-windows (current-screen)))))
-
-(defcommand restore-oldest-window () ()
-  (restore-window (car (last (stumpwm::screen-withdrawn-windows (current-screen))))))
-
-(defcommand restore-all-windows () ()
-  (dolist (window (stumpwm::screen-withdrawn-windows (current-screen)))
-    (handler-case (restore-window window)
-      (error (err) (err "~a" err)))))
-
-(let ((wallpaper-mode nil))
-  (defcommand wallpaper-mode () ()
-    (setf wallpaper-mode (not wallpaper-mode))
-    (if wallpaper-mode
-        (progn
-          (enable-mode-line (current-screen) (current-head) nil)
-          (withdraw-all-windows)
-          (define-key *top-map* (kbd "ESC") "wallpaper-mode"))
-        (progn
-          (enable-mode-line (current-screen) (current-head) t)
-          (restore-all-windows)
-          (undefine-key *top-map* (kbd "ESC"))))))
-
-(defparameter *scratchpad-map*
-  (let ((map (make-sparse-keymap)))
-    (define-keys map
-      ("w" . "withdraw-window")
-      ("a" . "withdraw-all-windows")
-      ("r" . "restore-window")
-      ("1" . "restore-newest-window")
-      ("0" . "restore-oldest-window")
-      ("*" . "restore-all-windows")
-      ("ESC" . "wallpaper-mode"))
-    map))
-
-(define-keys *root-map*
-  ("o" . '*scratchpad-map*))
 
 (dotimes (i 9)
   (define-key *root-map* (kbd (format nil "M-~a" (1+ i)))

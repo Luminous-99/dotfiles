@@ -7,6 +7,8 @@
                (:file "misc")
                (:file "contrib")
                (:file "window-decorator")
+               (:file "scratchpad")
+               (:file "window-preference")
                (:file "windows")
                (:file "audio")
                (:file "mode-line")
