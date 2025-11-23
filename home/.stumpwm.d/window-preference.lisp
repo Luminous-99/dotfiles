@@ -33,21 +33,19 @@
     preference))
 
 (defun place-window (window)
-  (when-let ((preference (find window *window-preferences*
-                               :test #'preference-matches-p)))
+  (when-let ((preference (find window *window-preferences* :test #'preference-matches-p)))
     (destructuring-bind (&key window-number group-name group-number &allow-other-keys)
         preference
       (when window-number
-        (let ((old-window (find window-number (group-windows (window-group window))
-                                :key #'window-number :test #'=)))
-          (when old-window
-            (setf (window-number old-window) (window-number window)))
-          (setf (window-number window) window-number)))
+        (when-let ((old-window (find window-number (group-windows (window-group window))
+                                     :key #'window-number)))
+          (setf (window-number old-window) (window-number window)))
+        (setf (window-number window) window-number))
       (when (and group-name (not (string= group-name (group-name (window-group window)))))
         (move-window-to-group window (find-group (window-screen window) group-name)))
       (when (and group-number (not (= group-number (group-number (window-group window)))))
         (let ((group (find group-number (screen-groups (window-screen window))
-                           :test #'= :key #'group-number)))
+                           :key #'group-number)))
           (move-window-to-group window group))))))
 
 (defcommand place-windows (&optional (screen (current-screen))) ()
