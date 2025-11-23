@@ -27,7 +27,7 @@
    #:toggle-float
    #:delete-split
    #:split-horizontal
-   #:place-all-windows
+   #:place-windows
    #:renumber-to-next
    #:renumber-to-previous
    #:split-vertical
@@ -209,7 +209,7 @@
 
 (define-keys *root-map*
   ("o" . '*scratchpad-map*)
-  ("W" . "place-all-windows")
+  ("W" . "place-windows")
   ("f" . "toggle-float")
   ("F" . "toggle-always-on-top")
   ("R" . "iresize-float")
