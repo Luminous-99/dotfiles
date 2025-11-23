@@ -41,11 +41,11 @@
       (destructuring-bind (&key window-number group-name group-number &allow-other-keys)
           preference
         (when window-number
-          (let* ((old-window (find window-number (group-windows (window-group window))
-                                   :key #'window-number :test #'=))
-                 (number (if old-window (window-number window) (window-number old-window))))
-            (setf (window-number old-window) number
-                  (window-number window) window-number)))
+          (let ((old-window (find window-number (group-windows (window-group window))
+                                  :key #'window-number :test #'=)))
+            (when old-window
+              (setf (window-number old-window) (window-number window)))
+            (setf (window-number window) window-number)))
         (cond
           ((and group-name (not (string= group-name (group-name (window-group window)))))
            (move-window-to-group window (find-group screen group-name)))
