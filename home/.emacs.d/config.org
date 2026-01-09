@@ -315,12 +315,14 @@ Enables Emmet and Web mode.
     (when size
       (slime (format "sbcl --dynamic-space-size %s" size))))
 
-  (set-keys lisp-mode-map
-            "C-c p" 'quickload
-            "C-c C-p" 'slime-eval-pprint-last-expression
-            "C-c C-a" 'load-asdf-system
-            "C-c M-a" 'load-current-asdf-file
-            "C-c e" 'slime-show-current-note)
+  (defun unintern-symbol (symbol package)
+    (interactive (list (slime-read-symbol-name "Unintern symbol: " t)
+                       (slime-read-package-name "from package: "
+                                                (let ((package  (slime-current-package)))
+                                                  (if (char-equal (aref package 0) ?:)
+                                                      (seq-subseq package 1)
+                                                    package)))))
+    (slime-unintern-symbol symbol package))
 
   (use-package slime
     :defer t
@@ -332,7 +334,13 @@ Enables Emmet and Web mode.
                 ("C-c C-p" . slime-eval-pprint-last-expression)
                 ("C-c C-a" . load-asdf-system)
                 ("C-c M-a" . load-current-asdf-file)
-                ("C-c e" . slime-show-current-note))
+                ("C-c e" . slime-show-current-note)
+                ("C-c p" . quickload)
+                ("C-c C-p" . slime-eval-pprint-last-expression)
+                ("C-c C-a" . load-asdf-system)
+                ("C-c M-a" . load-current-asdf-file)
+                ("C-c e" . slime-show-current-note)
+                ("C-c u" . unintern-symbol))
     :config
     (setf inferior-lisp-program "sbcl")
     (slime-setup '(slime-fancy slime-banner slime-company)))
