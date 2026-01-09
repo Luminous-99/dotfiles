@@ -32,7 +32,6 @@
    #:renumber-to-previous
    #:split-vertical
    #:clear-messages
-   #:*window-preferences*
    #:eval-line
    #:withdraw-all-windows
    #:wallpaper-mode
@@ -240,7 +239,7 @@
   (:class "Emacs" :window-number 0 :group-name "Group 1")
   (:class "firefox" :window-number 1 :group-name "Group 1")
   (:class "discord" :window-number 0 :group-name "Group 2")
-  (:class "thunderbird" :window-number 0 :group-name "Group 3")
+  (:class "org.mozilla.Thunderbird" :window-number 0 :group-name "Group 3")
   (:class "Spotify" :window-number 1 :group-name "Group 2"))
 
 (dotimes (i 9)

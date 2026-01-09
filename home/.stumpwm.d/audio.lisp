@@ -19,14 +19,16 @@
    #:set-volume-from-menu
    #:toggle-application-mute
    #:toggle-mute-from-menu
-   #:volume-Value))
+   #:volume-Value
+   #:forward-track
+   #:backward-track
+   #:player-notify))
 
 (in-package :audio)
 
 ;; Volume
 (defcommand volume-value () ()
-  (let ((val (run-formatted "~~/.stumpwm.d/scripts/volume_notify.sh Volume")))
-    val))
+  (run-formatted "~~/.stumpwm.d/scripts/volume_notify.sh Volume"))
 
 (defcommand volume-up () ()
   (run-shell-command "~/.stumpwm.d/scripts/volume_notify.sh Up"))
@@ -86,15 +88,29 @@
   ("XF86AudioMute" . "volume-mute"))
 
 ;; Music
-(defparameter *player* "spotify")
-(defparameter *track* "  Paused  ")
+(defparameter *player* "org.mpris.MediaPlayer2.spotify")
+(defparameter *track* "^(:fg \"#8f0075\") ^* Paused ^(:fg \"#8f0075\") ^*")
 
-(defun current-track ()
-  (let ((fmt "playerctl --player=~a metadata --format \"{{trunc(artist,18)}} - {{trunc(title,16)}}\"" )
-        (playing (string= "Playing" (run-formatted "playerctl --player=~a status" *player*))))
-    (if playing
-        (format nil "^(:fg \"#8f0075\") ^* ~a ^(:fg \"#8f0075\") ^*" (run-formatted fmt *player*))
-        "^(:fg \"#8f0075\") ^* Paused ^(:fg \"#8f0075\") ^*" )))
+(defun truncate-string (string size &optional trail)
+  (if (<= (length string) size)
+      string
+      (if trail
+          (concatenate 'string (subseq string 0 size) trail)
+          (subseq string 0 size))))
+
+(let ((return-fmt (formatter "^(:fg \"#8f0075\") ^* ~A ^(:fg \"#8f0075\") ^*")))
+  (defun current-track ()
+    (handler-case
+        (let* ((metadata (mpris:player-track-metadata *player*))
+               (title (truncate-string (cadr (assoc "xesam:title" metadata :test #'string=)) 16 "…"))
+               (album (truncate-string (cadr (assoc "xesam:album" metadata :test #'string=)) 18 "…"))
+               (playing (mpris:player-playback-status *player*)))
+          (if (string= playing "Playing")
+              (format nil return-fmt (if (zerop (length album))
+                                         title
+                                         (format nil "~A - ~A" album title)))
+              "^(:fg \"#8f0075\") ^* Paused ^(:fg \"#8f0075\") ^*"))
+      (error () "^(:fg \"#8f0075\") ^* Paused ^(:fg \"#8f0075\") ^*"))))
 
 (defun track-thread-action ()
   "This is the function for *TRACK-THREAD*, it updates the *TRACK* variable every second."
@@ -102,35 +118,64 @@
     (setf *track* (current-track))
     (sleep 1)))
 
-(defun list-players ()
-  (mapcar (lambda (string)
-            (car (uiop:split-string string :separator '(#\.))))
-          (uiop:split-string (run-formatted "playerctl --list-all") :separator '(#\Newline))))
-
 (defcommand set-player () ()
-  (let ((selection (select-from-menu (current-screen) (list-players))))
+  (let ((selection (select-from-menu (current-screen) (mapcar (lambda (x) (fourth (uiop:split-string x :separator '(#\.)))) (mpris:list-players)))))
     (when selection
-      (setf *player* (car selection))))
+      (setf *player* (mpris:player-by-name (car selection)))))
   (values))
 
+(flet ((gets (x y)
+         (cadr (assoc x y :test #'string=)))
+       (replace-spaces (x)
+         (map 'string (lambda (x) (if (char= x #\Space) #\_ x)) x)))
+  (defun player-notify (player)
+    (ensure-directories-exist #P"/tmp/player_notify_icons/")
+    (let* ((data (mpris:player-track-metadata player))
+           (artist (car (gets "xesam:artist" data)))
+           (title (gets "xesam:title" data))
+           (album (gets "xesam:album" data))
+           (url (gets "mpris:artUrl" data))
+           (sartist (replace-spaces artist))
+           (stitle (replace-spaces title))
+           (icon-file (format nil "/tmp/player_notify_icons/~A/~A" sartist stitle))
+           (body (format nil "~A - ~A" (truncate-string artist 30 "...") (truncate-string title 30 "..."))))
+      (unless (probe-file icon-file)
+        (ensure-directories-exist (format nil "/tmp/player_notify_icons/~A/" sartist))
+        (run-shell-command (format nil "curl -o ~S -L ~S" icon-file url) t))
+      (freedesktop-notifications:notify (truncate-string album 30 "...") body :app-icon icon-file))))
+
 (defcommand toggle-track () ()
-  (run-program (format nil "~~/.stumpwm.d/scripts/player_notify.sh ~A" *player*))
-  (run-program (format nil "playerctl --player=~A play-pause" *player*)))
+  (mpris:player-play-pause *player*)
+  (bt:make-thread (lambda () (player-notify *player*))))
+
+(defcommand forward-track () ()
+  (mpris:player-seek *player* 5))
+
+(defcommand backward-track () ()
+  (mpris:player-seek *player* -5))
 
 (defcommand next-track () ()
-  (run-program (format nil "playerctl --player=~A next" *player*)))
+  (mpris:player-next *player*))
 
 (defcommand previous-track () ()
-  (run-program (format nil "playerctl --player=~A previous" *player*)))
+  (mpris:player-previous *player*))
+
+(defparameter *audio-map* (make-sparse-keymap))
+
+(define-keys *audio-map*
+  ("P" . "set-player")
+  ("t" . "toggle-track")
+  ("p". "previous-track")
+  ("n" . "next-track")
+  ("v" . "set-volume-from-menu")
+  ("m" . "toggle-mute-from-menu"))
 
 (define-keys *root-map*
-  ("M-P" . "set-player")
-  ("M-t" . "toggle-track")
-  ("M-n" . "next-track")
-  ("M-v" . "set-volume-from-menu")
-  ("M-m" . "toggle-mute-from-menu")
-  ("M-p". "previous-track"))
+  ("M-p" . '*audio-map*))
+
 (define-keys *top-map*
   ("XF86AudioNext" . "next-track")
   ("XF86AudioPrev". "previous-track")
+  ("M-XF86AudioNext" . "forward-track")
+  ("M-XF86AudioPrev". "backward-track")
   ("Pause" . "toggle-track"))

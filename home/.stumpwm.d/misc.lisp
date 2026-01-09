@@ -220,7 +220,7 @@ VARIABLE-NAMES are the variables used in your common lisp to be evaluated before
   (run-shell-command "alacritty"))
 
 (defcommand emacs (&optional (file "") (client t)) ()
-  (run-program (format nil "emacs~:[~;client --alternate-editor= -c~] ~S" client file))
+  (run-program (format nil "emacs~:[~;client --alternate-editor= -c~] \"~A\"" client file))
   file)
 
 #+sbcl (pushnew 'emacs cl-user::*ed-functions*)

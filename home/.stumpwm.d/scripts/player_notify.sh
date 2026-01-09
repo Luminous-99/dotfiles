@@ -8,7 +8,6 @@ title=$(playerctl --player="$1" metadata --format "{{title}}")
 album=$(playerctl --player="$1" metadata --format "{{album}}")
 sartist=$(playerctl --player="$1" metadata --format "{{artist}}" | tr " " "_")
 stitle=$(playerctl --player="$1" metadata --format "{{title}}" | tr " " "_")
-salbum=$(playerctl --player="$1" metadata --format "{{album}}" | tr " " "_")
 url=$(playerctl --player="$1" metadata --format "{{mpris:artUrl}}" | tr " " "_")
 icon_file=$(echo "$icondir/$sartist/$stitle")
 

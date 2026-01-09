@@ -169,6 +169,16 @@ user presses 'y'."
         (format nil " ~A~:[ ~;%~]" volume (digit-char-p (schar volume 0))))
     (t () " 0%")))
 
+(defun mem::fmt-mem-allocated (mem)
+  "Returns a string representing the current allocated memory."
+  (let* ((allocated (truncate (/ (nth 1 mem) 1000))))
+    (format nil "~4D mb" allocated)))
+
+(defun mem::fmt-mem-percent (mem)
+  "Returns a string representing the current percent of used memory."
+  (let* ((% (* 100 (nth 2 mem))))
+    (format nil "^[~A ~4F%^]" (bar-zone-color %) %)))
+
 (add-screen-mode-line-formatter #\B #'battery-fmt)
 (add-screen-mode-line-formatter #\V #'volume-formatter)
 
