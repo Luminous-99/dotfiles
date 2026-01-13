@@ -330,16 +330,15 @@ Enables Emmet and Web mode.
     :bind (:map slime-mode-map
                 ("C-c c" . slime-export-class)
                 ("C-c s" . slime-export-structure)
-                ("C-c p" . quickload)
-                ("C-c C-p" . slime-eval-pprint-last-expression)
-                ("C-c C-a" . load-asdf-system)
                 ("C-c M-a" . load-current-asdf-file)
                 ("C-c e" . slime-show-current-note)
                 ("C-c p" . quickload)
                 ("C-c C-p" . slime-eval-pprint-last-expression)
                 ("C-c C-a" . load-asdf-system)
-                ("C-c M-a" . load-current-asdf-file)
-                ("C-c e" . slime-show-current-note)
+                ("C-c u" . unintern-symbol)
+                :map slime-repl-mode-map
+                ("C-c p" . quickload)
+                ("C-c C-a" . load-asdf-system)
                 ("C-c u" . unintern-symbol))
     :config
     (setf inferior-lisp-program "sbcl")
