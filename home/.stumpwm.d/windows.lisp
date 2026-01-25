@@ -9,7 +9,6 @@
                 #:gravity-for-window
                 #:if-let)
   (:export
-   #:float-unless-maximized
    #:sort-current-group
    #:set-floating
    #:float-move-resize
@@ -97,20 +96,45 @@
 
 (add-hook *destroy-window-hook* 'sort-current-group)
 
-(defun float-unless-maximized (window)
-  (unless (getf (stumpwm::group-plist (current-group)) :GAPS)
-    (when window
-      (when-let* ((screen (current-screen))
-                  (mode-line (car (stumpwm::screen-mode-lines (current-screen))))
-                  (maximized-width (screen-width screen))
-                  (maximized-height (- (screen-height screen) (stumpwm::mode-line-height mode-line))))
-        (let ((width (window-width window))
-              (height (window-height window)))
-          (when (or (< width maximized-width) (< height maximized-height))
-            (set-floating window t)
-            (focus-window window t)))))))
+(defun float-on-creation (window)
+  (let* ((hints (window-normal-hints window))
+         (state (mapcar (lambda (x) (xlib:atom-name *display* x)) (xlib:get-property (window-xwin window) :_net_wm_state)))
+         (program-specified-size-p (xlib::wm-size-hints-program-specified-size-p hints))
+         (user-specified-size-p (xlib::wm-size-hints-user-specified-size-p hints))
+         (x (xlib:wm-size-hints-x hints))
+         (y (xlib:wm-size-hints-y hints))
+         (width (xlib:wm-size-hints-width hints))
+         (max-width (xlib:wm-size-hints-max-width hints))
+         (min-width (xlib:wm-size-hints-min-width hints))
+         (height (xlib:wm-size-hints-height hints))
+         (max-height (xlib:wm-size-hints-max-height hints))
+         (min-height (xlib:wm-size-hints-min-height hints)))
+    (cond
+      ((equalp state '(:_net_wm_state_maximized_horz :_net_wm_state_maximized_vert)))
+      ((or user-specified-size-p program-specified-size-p)
+       (set-floating window t)
+       (let ((x (or x (floor (- (screen-width (current-screen)) width) 2.0)))
+             (y (or y (floor (- (screen-height (current-screen)) height) 2.0))))
+         (float-move-resize window :x x :y y :width width :height height))
+       (focus-window window t))
+      ((and max-width
+            max-height
+            min-width
+            min-height
+            (= max-width min-width)
+            (= max-height min-height))
+       (set-floating window t)
+       (let ((x (if (or (not x) (zerop x))
+                    (floor (- (screen-width (current-screen)) max-width) 2.0)
+                    x))
+             (y (if (or (not y) (zerop y))
+                    (floor (- (screen-height (current-screen)) max-height) 2.0)
+                    y)))
+         (float-move-resize window :x x :y y :width max-width :height max-height))
+       (focus-window window t))
+      (t))))
 
-(add-hook *new-window-hook* 'float-unless-maximized)
+(add-hook *new-window-hook* 'float-on-creation)
 
 (defparameter *resizing-mode* nil)
 (setf *resize-increment* 20)
@@ -204,7 +228,7 @@
   (stumpwm::unmap-message-window (current-screen)))
 
 (defcommand xprop () ()
-  (message (run-shell-command (format nil "xprop -id ~A" (stumpwm::window-id (current-window))) t)))
+  (message "~A" (run-shell-command (format nil "xprop -id ~A" (stumpwm::window-id (current-window))) t)))
 
 (define-keys *root-map*
   ("o" . '*scratchpad-map*)
@@ -244,11 +268,13 @@
 
 (dotimes (i 9)
   (define-key *root-map* (kbd (format nil "M-~a" (1+ i)))
-    (format nil "gmove ~a" (1+ i))))
+    (format nil "gmove ~A" (1+ i))))
+
+(define-key *root-map* (kbd "M-n") "gselect")
 
 (dotimes (i 7)
-  (gnew (format nil "Group ~a" (+ 2 i))))
-(gnew-dynamic "Group 9")
+  (gnew (format nil "Group ~A" (+ 2 i))))
+(gnew-float "Group 9")
 
 (gselect "1")
 

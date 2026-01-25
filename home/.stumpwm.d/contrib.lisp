@@ -70,6 +70,7 @@
 (in-package :contrib)
 
 (defun toggle-gaps ()
-  (if (cdr (stumpwm::group-frames (current-group)))
-      (toggle-gaps-on)
-      (toggle-gaps-off)))
+  (when (typep (current-group) 'stumpwm::tile-group)
+    (if (cdr (stumpwm::group-frames (current-group)))
+        (toggle-gaps-on)
+        (toggle-gaps-off))))

@@ -28,7 +28,7 @@
 
 ;; Volume
 (defcommand volume-value () ()
-  (run-formatted "~~/.stumpwm.d/scripts/volume_notify.sh Volume"))
+  (string-trim '(#\Newline) (run-shell-command "~/.stumpwm.d/scripts/volume_notify.sh Volume" t)))
 
 (defcommand volume-up () ()
   (run-shell-command "~/.stumpwm.d/scripts/volume_notify.sh Up"))
