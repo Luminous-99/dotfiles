@@ -131,9 +131,11 @@
         (funcall decorator)))))
 
 (defun free-decorator (window)
-  (symbol-macrolet ((decorator (gethash :decorator (window-plist window))))
-    (funcall decorator :free)
-    (setf decorator :freed)))
+  (bt:with-lock-held ((gethash :lock (window-plist window)))
+    (unless (gethash :number (window-plist window))
+      (symbol-macrolet ((decorator (gethash :decorator (window-plist window))))
+        (funcall decorator :free)
+        (setf decorator :freed)))))
 
 (add-hook *destroy-window-hook* 'free-decorator)
 
@@ -173,14 +175,14 @@
     (xlib:add-to-save-set (window-xwin window))
     (setf (window-parent window) master-window)))
 
-(defun start-decorator (&optional (delay 0.5))
+(defun start-decorator (&optional (delay 0.25))
   (bt:make-thread (lambda ()
                     (loop
                       (sleep delay)
                       (update-group-decorations)))
-                  :name "decorator"))
+                  :name "Window Decorator"))
 
 (defun kill-decorator ()
-  (bt:destroy-thread (find "decorator" (bt:all-threads) :key #'bt:thread-name :test #'string=)))
+  (bt:destroy-thread (find "Window Decorator" (bt:all-threads) :key #'bt:thread-name :test #'string=)))
 
 (start-decorator)

@@ -19,7 +19,7 @@
 (defcommand withdraw-all-windows (&optional (group (current-group))) ()
   (dolist (window (group-windows group))
     (handler-case (stumpwm::withdraw-window window)
-      (error (err) (err "~a" err)))))
+      (error (err) (err "~A" err)))))
 
 (flet ((window-from-menu ()
          (let ((windows (stumpwm::screen-withdrawn-windows (current-screen))))
@@ -30,10 +30,12 @@
              (windows (stumpwm::sort-windows-by-number windows))
              (restored-number (gethash :number (window-plist window)))
              (obstruction (find (or restored-number (window-number window)) windows :key #'window-number :test #'=)))
+        (setf (gethash :number (window-plist window)) nil)
         (if obstruction
             (setf (window-number obstruction) (window-number window)
                   (window-number window) restored-number)
             (setf (window-number window) restored-number))
+        (setf (window-group window) (current-group))
         (stumpwm::restore-window window)))))
 
 (defcommand restore-newest-window () ()
