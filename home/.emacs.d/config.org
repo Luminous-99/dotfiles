@@ -156,14 +156,13 @@ Setup projectile for project management.
 #+begin_src emacs-lisp :tangle lisp/projects.el
   ;; -*- lexical-binding: t; -*-
   (use-package projectile
-    :defer t
     :ensure t
     :config
-    (setf projectile-project-search-path (list "~/projects/")
+    (setf projectile-project-search-path (list "~/.projects/" "~/Contributions/")
           projectile-generic-command "fd -L . -0 --type f --color=never --strip-cwd-prefix")
-    (cl-pushnew "~/dotfiles/" projectile-known-projects :test #'string=)
     (projectile-load-known-projects)
     (projectile-discover-projects-in-search-path)
+    (cl-pushnew "~/dotfiles/" projectile-known-projects :test #'string=)
     (let ((projectile-keymap (make-sparse-keymap)))
       (keymap-global-set "H-p" projectile-keymap)
       (keymap-set projectile-keymap "H-a" #'projectile-add-known-project)
