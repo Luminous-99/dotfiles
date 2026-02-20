@@ -1,0 +1,195 @@
+configuration {
+    /*	modi: "window,run,ssh";*/
+    font: "0xProto Nerd Font 12";
+    /*	location: 0;*/
+    /*	yoffset: 0;*/
+    /*	xoffset: 0;*/
+    /*	fixed-num-lines: true;*/
+    show-icons: true;
+    kb-row-left: "Control+h";
+    kb-row-right: "Control+l";
+    kb-row-down: "Control+j,Control+n";
+    kb-row-up: "Control+k,Control+p";
+    kb-remove-to-eol: "";
+    kb-remove-char-back: "BackSpace,Shift+BackSpace";
+    kb-accept-entry: "Control+s,Return";
+    kb-mode-complete: "";
+    timeout {
+        action: "kb-cancel";
+        delay:  0;
+    }
+    filebrowser {
+        directories-first: true;
+        sorting-method:    "name";
+    }
+}
+
+* {
+    light-bg0-soft:     #f2f2f2;
+    light-bg1:          #f2f2f2;
+    light-bg2:          #b2b2b2;
+    light-fg0:          #333333;
+    light-fg1:          #333333;
+    light-red-dark:     #9d0006;
+    light-red-light:    #cc241d;
+    light-yellow-dark:  #b57614;
+    light-yellow-light: #d79921;
+    light-gray:         #7c6f64;
+
+    /* Theme colors */
+    background:                  @light-bg0-soft;
+    background-color:            @background;
+    foreground:                  @light-fg1;
+    border-color:                @light-gray;
+    separatorcolor:              @border-color;
+    scrollbar-handle:            @border-color;
+
+    normal-background:           @background;
+    normal-foreground:           @foreground;
+    alternate-normal-background: @light-bg1;
+    alternate-normal-foreground: @foreground;
+    selected-normal-background:  @light-bg2;
+    selected-normal-foreground:  @light-fg0;
+
+    active-background:           @light-yellow-dark;
+    active-foreground:           @background;
+    alternate-active-background: @active-background;
+    alternate-active-foreground: @active-foreground;
+    selected-active-background:  @light-yellow-light;
+    selected-active-foreground:  @active-foreground;
+
+    urgent-background:           @light-red-dark;
+    urgent-foreground:           @background;
+    alternate-urgent-background: @urgent-background;
+    alternate-urgent-foreground: @urgent-foreground;
+    selected-urgent-background:  @light-red-light;
+    selected-urgent-foreground:  @urgent-foreground;
+    border-radius: 0px;
+}
+window {
+    padding: 5px;
+    background-color: var(background);
+    border: 3px;
+}
+
+mainbox {
+    padding: 5px;
+    border:  0;
+}
+
+message {
+    padding:      1px ;
+    border-color: var(separatorcolor);
+    border:       1px dash 0px 0px ;
+}
+textbox {
+    text-color: var(foreground);
+}
+listview {
+    scrollbar:    false;
+    border-color: var(separatorcolor);
+    spacing:      2px ;
+    fixed-height: 0;
+    border: none;
+    columns: 5;
+    lines: 8;
+    layout: vertical;
+    fixed-columns: true;
+}
+element {
+    padding: 1px;
+    border:  0;
+    background-color: var(normal-background);
+    orientation: vertical;
+    children: [ element-icon, element-text ];
+}
+element-text {
+    horizontal-align: 0.5;
+    size: 0.5em;
+    background-color: var(normal-background);
+    padding: 10px;
+}
+element-icon {
+    size: 2.5em;
+    padding: 5px;
+}
+element normal.normal {
+    background-color: var(normal-background);
+    text-color:       var(normal-foreground);
+}
+element normal.urgent {
+    background-color: var(urgent-background);
+    text-color:       var(urgent-foreground);
+}
+element normal.active {
+    background-color: var(active-background);
+    text-color:       var(active-foreground);
+}
+element selected.normal {
+    background-color: var(selected-normal-background);
+    text-color:       var(selected-normal-foreground);
+}
+element selected.urgent {
+    background-color: var(selected-urgent-background);
+    text-color:       var(selected-urgent-foreground);
+}
+element selected.active {
+    background-color: var(selected-active-background);
+    text-color:       var(selected-active-foreground);
+}
+element alternate.normal {
+    background-color: var(alternate-normal-background);
+    text-color:       var(alternate-normal-foreground);
+}
+element alternate.urgent {
+    background-color: var(alternate-urgent-background);
+    text-color:       var(alternate-urgent-foreground);
+}
+element alternate.active {
+    background-color: var(alternate-active-background);
+    text-color:       var(alternate-active-foreground);
+}
+scrollbar {
+    width:        4px ;
+    padding:      0;
+    handle-width: 8px ;
+    border:       0;
+}
+mode-switcher {
+    border-color: var(separatorcolor);
+    border:       2px dash 0px 0px ;
+}
+button selected {
+    background-color: var(selected-normal-background);
+    text-color:       var(selected-normal-foreground);
+}
+inputbar {
+    padding:    1px ;
+    spacing:    0;
+    text-color: var(normal-foreground);
+    str: "";
+    children:   [ prompt,textbox-prompt-colon,entry,case-indicator ];
+}
+case-indicator {
+    spacing:    0;
+    text-color: var(normal-foreground);
+}
+entry {
+    spacing:    0;
+    font: "0xProto 20";
+    text-color: var(normal-foreground);
+    placeholder: "...";
+}
+prompt {
+    spacing:    0;
+    text-color: var(normal-foreground);
+    str: "";
+    enabled: false;
+}
+textbox-prompt-colon {
+    margin:     0px 10px 0px 10px ;
+    font: "0xProto 21";
+    expand:     false;
+    str:        " ";
+    text-color: var(normal-foreground);
+}

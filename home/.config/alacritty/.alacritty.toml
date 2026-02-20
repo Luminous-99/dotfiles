@@ -1,0 +1,6 @@
+general.import = [ "~/dotfiles/alacritty/themes/gruvbox.toml", ]
+
+[font]
+normal = { family = "IosevkaCustom", style="regular" }
+bold   = { family = "IosevkaCustom", style="bold" }
+size = 10

@@ -1,0 +1,6 @@
+#!/bin/sh
+while true; do 
+    file=$(ls ~/dotfiles/Background/ | sort -R | tail -1)
+    feh --no-fehbg --bg-scale "$HOME/dotfiles/Background/$file"
+    sleep 120
+done

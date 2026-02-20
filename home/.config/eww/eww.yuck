@@ -1,0 +1,125 @@
+(defwidget bar []
+  (centerbox :orientation "h"
+    (workspaces)
+    (music)
+    (sidestuff)))
+
+(defvar menu_icon "󰍝")
+(defvar next_icon "󰒭")
+(defvar previous_icon "󰒮")
+(defpoll player_icon :interval "1s" :initial "" "./player_poll.sh")
+
+(defwidget menu_widget []
+  (box :orientation "h"
+    (menu_buttons)))
+
+(defwidget menu_buttons [] 
+    (box :orientation "v" 
+    (button :class "icon-button shutdown" :onclick "notify-send -u critical 'Shutting Down' && shutdown" "⏻")
+    (button :class "icon-button restart" :onclick "notify-send -u critical Restarting && shutdown -r" "")
+))
+
+(defwidget sidestuff []
+  (box :class "sidestuff" :orientation "h" :space-evenly false :halign "end"
+    (metric :label "󰝚"
+            :value volume
+            :onchange "amixer -D pulse sset Master {}%")
+    (metric :label "󰛨"
+            :value brightness
+            :onchange "xbacklight -set {}%")
+    (metric :label "󱛟"
+            :value {round((1 - (EWW_DISK["/"].free / EWW_DISK["/"].total)) * 100, 0)}
+            :onchange "")
+    (battery  :capacity { EWW_BATTERY.BAT0.capacity })
+    (label :class "date-time" :text time)
+    (button :class "icon-button" :style "margin-right: 1rem;" :onclick "./menu.sh" menu_icon )))
+
+(defvar wbutton1 "workspace-button")
+(defvar wbutton2 "workspace-button")
+(defvar wbutton3 "workspace-button")
+(defvar wbutton4 "workspace-button")
+(defvar wbutton5 "workspace-button")
+(defvar wbutton6 "workspace-button")
+(defvar wbutton7 "workspace-button")
+(defvar wbutton8 "workspace-button")
+(defvar wbutton9 "workspace-button")
+(defwidget workspaces []
+  (box :class "workspaces"
+       :orientation "h"
+       :space-evenly true
+       :halign "start"
+       :spacing 0
+    (button :class wbutton1 :onclick "i3-msg workspace number 1 && ./toggle_wbutton.sh 1"  1)
+    (button :class wbutton2 :onclick "i3-msg workspace number 2 && ./toggle_wbutton.sh 2"  2)
+    (button :class wbutton3 :onclick "i3-msg workspace number 3 && ./toggle_wbutton.sh 3"  3)
+    (button :class wbutton4 :onclick "i3-msg workspace number 4 && ./toggle_wbutton.sh 4"  4)
+    (button :class wbutton5 :onclick "i3-msg workspace number 5 && ./toggle_wbutton.sh 5"  5)
+    (button :class wbutton6 :onclick "i3-msg workspace number 6 && ./toggle_wbutton.sh 6"  6)
+    (button :class wbutton7 :onclick "i3-msg workspace number 7 && ./toggle_wbutton.sh 7"  7)
+    (button :class wbutton8 :onclick "i3-msg workspace number 8 && ./toggle_wbutton.sh 8"  8)
+    (button :class wbutton9 :onclick "i3-msg workspace number 9 && ./toggle_wbutton.sh 9"  9)
+    (label  :class "workspace-icon" :text " ")
+    ))
+
+(defwidget battery [capacity]
+  (box :orientation "h"
+       :space-evenly false
+       :halign "center"
+    (label  :class "label" :text { EWW_BATTERY.BAT0.status == "Charging" ? "󰂄 " : EWW_BATTERY.BAT0.capacity < 20 ? "󱃌 " : "󰁹 " } :style { EWW_BATTERY.BAT0.capacity <= 20 ? "color: #ff6f6f;" : "color: #a6e3a2;" })
+    (label :class "label" :text "${capacity}% " :style { EWW_BATTERY.BAT0.capacity <= 20 ? "color: #ff6f6f;font-size: 1.2rem;" : "color: #a6e3a2;font-size: 1.2rem;" })))
+
+(defwidget music []
+  (box :class "music"
+       :orientation "h"
+       :space-evenly false
+       :halign "center"
+    (label :class "label" :text "󰎆 ") 
+    (label :text music :visible {music != "" ? true : false})
+    (button :class "track-controller" :onclick "playerctl previous" :visible { music != "" ? true : false } previous_icon) 
+    (button :class "track-controller" :onclick "playerctl next" :visible { music != "" ? true : false } next_icon) 
+    (button :class "player-button" :onclick "./player_click.sh" :visible { music != "" ? true : false }  player_icon) 
+    ))
+
+(defwidget metric [label value onchange]
+  (box :orientation "h"
+       :class "metric"
+       :space-evenly false
+    (box :class "label" label)
+    (scale :min 0
+           :max 101
+           :active {onchange != ""}
+           :value value
+           :onchange onchange)))
+
+(deflisten music :initial ""
+  "playerctl --player='mpv,vlc,spotify' --follow metadata --format '{{ artist }} - {{ trunc(title, 28) }}' || true")
+
+(defpoll volume :interval "1s"
+  "scripts/getvol")
+
+(defpoll brightness :interval "1s"
+  "xbacklight -get")
+
+(defpoll time :interval "2s" 
+    "date '+%Y-%m-%d %H:%M:%S'")
+
+(defwindow bar
+  :monitor 0
+  :windowtype "dock"
+  :geometry (geometry :x "0%"
+                      :y "0%"
+                      :width "50%"
+                      :height "5px"
+                      :anchor "top left")
+  :reserve (struts :side "top" :distance "4%")
+  (bar))
+
+(defwindow menu
+  :monitor 0
+  :geometry (geometry :x "95%"
+                      :y "4%"
+                      :width "64px"
+                      :height "5px"
+                      :anchor "top left")
+  :reserve (struts :side "right" :distance "0%")
+  (menu_widget))

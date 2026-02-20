@@ -1,0 +1,681 @@
+#+AUTHOR: luminous99
+#+STARTUP: fold hideblocks
+
+* Early Init
+#+begin_src emacs-lisp :tangle early-init.el
+  ;; -*- lexical-binding: t; -*-
+  (setf gc-cons-threshold (* 300 1000 1000))
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (setq gc-cons-threshold (* 1000 1000))
+              (message (emacs-init-time))))
+
+  (set-face-attribute 'default nil :family "IosevkaCustom Nerd Font" :height 130)
+  (menu-bar-mode 0)
+  (tool-bar-mode 0)
+  (scroll-bar-mode 0)
+  (fringe-mode 0)
+  (show-paren-mode 1)
+  (column-number-mode 1)
+  (line-number-mode 1)
+  (global-display-line-numbers-mode 1)
+#+end_src
+* Init
+** Load configuration files
+#+begin_src emacs-lisp :tangle init.el
+  ;; -*- lexical-binding: t; -*-
+  (setf custom-file (concat user-emacs-directory "custom.el"))
+  (when (file-exists-p custom-file)
+    (load custom-file))
+
+  (require 'package)
+  (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+  (package-initialize)
+
+  (setf configuration-files-path (expand-file-name "~/.emacs.d/lisp/")
+        files-to-load (mapcar (lambda (file)
+                                (format "%s%s.el" configuration-files-path file))
+                              '(misc theme completion gnus evil lsp org slime web prettify projects package)))
+
+  (defun load-config (file)
+    (load file))
+
+#+end_src
+** Thing that don't deserve their own file
+#+begin_src emacs-lisp :tangle init.el
+  ;; -*- lexical-binding: t; -*-
+
+  (defmacro set-keys (keymap &rest bindings)
+    `(progn
+       ,@(cl-loop for (key . command) on bindings by #'cddr
+                  collect `(keymap-set ,keymap ,key ,(car command)))))
+
+  (set-keys global-map)
+
+  (defun replace-defun ()
+    "Evaluate current Defun, then replace it with it's return value."
+    (interactive)
+    (let* ((region (bounds-of-thing-at-point 'sexp))
+           (string (buffer-substring-no-properties (car region) (cdr region))))
+      (cl-case major-mode
+        ((lisp-interaction-mode emacs-lisp-mode) (delete-region (car region) (cdr region))
+         (let ((form (car (read-from-string string))))
+           (insert (format "%s" (eval form)))))
+        (lisp-mode (delete-region (car region) (cdr region))
+                   (slime-eval-print string)))))
+
+  (defun save-sexp ()
+    "Save sexp in the kill ring."
+    (interactive)
+    (kill-sexp (or current-prefix-arg 1) t)
+    (yank)
+    (when (eq last-command 'save-sexp)
+      (kill-append (current-kill 1) t))
+    (setf this-command 'save-sexp))
+
+  (defun describe-thing-at-point ()
+    "Describe thing at point."
+    (interactive)
+    (let ((thing (symbol-at-point)))
+      (cond
+       ((or (functionp thing) (macrop thing)) (describe-function thing))
+       ((or (special-variable-p thing)
+            (local-variable-p thing)
+            (custom-variable-p thing))
+        (describe-variable thing)))))
+
+  (defvar variable-operations-map (make-sparse-keymap)
+    "A keymap for commands that operate on variables.")
+  (set-keys global-map "s-v" variable-operations-map)
+
+  (defun set-variable-at-point (new-value)
+    "Set a variable at point to a queried value."
+    (interactive (list (car (read-from-string (read-string (format "New value for `%s`: " (symbol-at-point)))))))
+    (set (symbol-at-point) (eval new-value t)))
+
+  (defun nullify-variable-at-point ()
+    "Set a variable at point to nil."
+    (interactive)
+    (let ((variable (symbol-at-point)))
+      (set variable nil)))
+
+  (set-keys variable-operations-map
+            "s-s" 'set-variable-at-point
+            "s-n" 'nullify-variable-at-point)
+
+  (use-package xref
+    :defer t
+    :config
+    (setf (cdr xref-prompt-for-identifier)
+          (cons 'xref-find-references (cdr xref-prompt-for-identifier))))
+
+  (set-keys emacs-lisp-mode-map
+            "s-d" #'xref-find-definitions
+            "s-r" #'xref-find-references
+            "C-c M-m" #'emacs-lisp-macroexpand
+            "C-c M-e" #'macrostep-expand)
+
+  (set-keys global-map
+            "H-c" #'describe-char
+            "H-f" #'describe-face
+            "C-x C-b" #'ibuffer
+            "C-x b" #'consult-buffer
+            "s-c" #'chmod
+            "H-r" #'replace-defun
+            "H-s" #'save-sexp
+            "s-h" #'describe-thing-at-point)
+
+  (put 'narrow-to-region 'disabled nil)
+  (use-package grep
+    :config
+    (grep-apply-setting 'grep-command "grep --color=auto -rnH --null -e ")
+    (keymap-global-set "H-g" #'grep))
+
+  (add-hook 'prog-mode-hook (lambda () (setf tab-width 4 indent-tabs-mode nil)))
+  (add-hook 'python-mode-hook #'lsp)
+  (add-hook 'lisp-mode-hook (lambda () (paredit-mode 1)))
+  (add-hook 'emacs-lisp-mode-hook (lambda () (paredit-mode 1)))
+  (add-hook 'slime-repl-mode-hook (lambda () (paredit-mode 1)))
+
+  (setf display-line-numbers-type 'relative
+        proced-enable-color-flag t
+        frame-resize-pixelwise t
+        warning-minimum-level :error
+        inhibit-startup-screen t
+        backup-directory-alist `((".*" . ,temporary-file-directory))
+        auto-save-file-name-transforms `((".*" ,temporary-file-directory t))
+        browse-url-browser-function '(("hyperspec" . eww-browse-url)
+                                      ("." . browse-url-default-browser))
+        treesit-font-lock-level 4)
+
+  (dolist (file files-to-load)
+    (load-config file))
+#+end_src
+* Package
+Some package based key bindings
+#+begin_src emacs-lisp :tangle lisp/package.el
+  ;; -*- lexical-binding: t; -*-
+
+  (let ((package-keymap (make-sparse-keymap)))
+    (keymap-global-set "s-p" package-keymap)
+    (set-keys package-keymap
+              "i" #'package-install
+              "s-i" #'package-install
+              "r" #'package-reinstall
+              "s-r" #'package-reinstall
+              "R" #'package-refresh-contents
+              "s-R" #'package-refresh-contents
+              "d" #'package-delete
+              "s-d" #'package-delete
+              "a" #'package-autoremove
+              "s-a" #'package-autoremove
+              "u" #'package-upgrade
+              "s-u" #'package-upgrade
+              "U" #'package-upgrade-all
+              "s-U" #'package-upgrade-all
+              "l" #'list-packages
+              "s-l" #'list-packages))
+#+end_src
+* Projects
+Setup projectile for project management.
+#+begin_src emacs-lisp :tangle lisp/projects.el
+  ;; -*- lexical-binding: t; -*-
+  (use-package projectile
+    :ensure t
+    :config
+    (setf projectile-project-search-path (list "~/.projects/" "~/Contributions/")
+          projectile-generic-command "fd -L . -0 --type f --color=never --strip-cwd-prefix")
+    (projectile-load-known-projects)
+    (projectile-discover-projects-in-search-path)
+    (cl-pushnew "~/dotfiles/" projectile-known-projects :test #'string=)
+    (let ((projectile-keymap (make-sparse-keymap)))
+      (keymap-global-set "H-p" projectile-keymap)
+      (set-keys projectile-keymap
+                "H-a" #'projectile-add-known-project
+                "a"   #'projectile-add-known-project
+                "H-s" #'projectile-switch-project
+                "s"   #'projectile-switch-project
+                "H-f" #'projectile-find-file
+                "f"   #'projectile-find-file)))
+#+end_src
+* Ligatures
+#+begin_src emacs-lisp :tangle lisp/ligatures.el
+  ;; -*- lexical-binding: t; -*-
+  (ligature-set-ligatures '(prog-mode) (mapcar #'(lambda (x) (if (symbolp x) (symbol-name x) x))
+                                               `(-> <- => =>> >=> =>=
+                                                    =<< =<= <=< <=> >> >>>
+                                                    << <<< <> <|> == ===
+                                                    .= := "#=" != !== =!=
+                                                    =:= :: ::: :<: :>: ||
+                                                    |> ||> |||> <| <|| <|||
+                                                    ,** *** <* <*> *> <+
+                                                    <+> +> <$ <$> $> &&
+                                                    ?? %% "[|" "|]" // ///)))
+
+  (ligature-set-ligatures '(org-mode) (mapcar #'(lambda (x) (if (symbolp x) (symbol-name x) x))
+                                              `(-> <- => =>> >=> =>=
+                                                   =<< =<= <=< <=> >> >>>
+                                                   << <<< <> <|> == ===
+                                                   .= := "#=" != !== =!=
+                                                   =:= :: ::: :<: :>: ||
+                                                   |> ||> |||> <| <||
+                                                   <||| <* <*> *> <+
+                                                   <+> +> <$ <$> $> &&
+                                                   ?? %% "[|" "|]" // ///)))
+
+  (global-ligature-mode 1)
+#+end_src
+* Prettify
+#+begin_src emacs-lisp :tangle lisp/prettify.el
+  ;; -*- lexical-binding: t; -*-
+  (set-face-attribute 'default nil :family "IosevkaCustom Nerd Font" :height 130)
+  (use-package nerd-icons
+    :ensure t
+    :custom (nerd-icons-font-family (face-attribute 'default :family)))
+
+  (defun prettify ()
+    (setf prettify-symbols-alist '(("lambda" . ?λ)
+                                   ("[X]" . ?󰱒)
+                                   ("[ ]" . ?󰄱)
+                                   ("[-]" . ?󰡖)))
+    (prettify-symbols-mode 1))
+
+  (add-hook 'prog-mode-hook #'prettify)
+  (add-hook 'org-mode-hook #'prettify)
+
+  (load-config "~/.emacs.d/lisp/ligatures.el")
+#+end_src
+* Web
+** Javascript/Typescript
+Setup Lsp, highlighting and other basic features for typescript and javascript.
+#+begin_src emacs-lisp :tangle lisp/web.el
+  ;; -*- lexical-binding: t; -*-
+  (cl-flet ((setup ()
+              (indent-tabs-mode nil)
+              (tide-setup)
+              (flycheck-mode 1)
+              (eldoc-mode 1)
+              (lsp-deferred)
+              (company-mode 1)))
+    (use-package tide
+      :defer t
+      :ensure t
+      :after (company flycheck)
+      (add-hook 'typescript-ts-mode-hook #'setup)
+      (add-hook 'tsx-ts-mode-hook #'setup)))
+#+end_src
+
+** HTML/CSS
+Enables Emmet and Web mode.
+#+begin_src emacs-lisp :tangle lisp/web.el
+  (cl-flet ((setup ()
+              (setf web-mode-markup-indent-offset 4
+                    web-mode-code-indent-offset 4
+                    web-mode-css-indent-offset 4) 
+              (lsp-deferred)
+              (emmet-mode 1)))
+    (use-package web-mode
+      :defer t
+      :ensure t
+      :config
+      (add-hook 'web-mode-hook #'setup)
+      (setf web-mode-engines-alist '(("php" . "\\.php\\'")))
+      (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
+      (add-to-list 'auto-mode-alist '("\\.php\\'" . web-mode))))
+#+end_src
+* Slime
+#+begin_src emacs-lisp :tangle lisp/slime.el
+  ;; -*- lexical-binding: t; -*-
+
+  (defun ql-annotater-generator (systems)
+    (lambda (x)
+      (cl-destructuring-bind (name version dist) (cl-assoc x systems :test #'string=)
+        (let ((align (propertize " " 'display '(space :align-to 25)))
+              (version (propertize (concat "v" version) 'face 'marginalia-date))
+              (dist (propertize dist 'face 'marginalia-key)))
+          (format "%s%s    %s" align dist version)))))
+
+  (defun ql-systems ()
+    (slime-eval
+     '(cl:mapcar
+       (cl:lambda (x)
+                  (cl:list (ql-dist:name x)
+                           (ql-dist:version (ql-dist:dist x))
+                           (cl:format nil "~:(~A~)" (ql-dist:name (ql-dist:dist x)))))
+       (ql:system-list))))
+
+  (defun quickload (package)
+    (interactive (list (let* ((systems (ql-systems))
+                              (completion-extra-properties
+                               (list
+                                :annotation-function (ql-annotater-generator systems)
+                                :category 'quicklisp)))
+                         (completing-read "Quickload Package: " (mapcar #'car systems)))))
+    (slime-eval-async `(ql:quickload ,package)))
+
+  (defun load-asdf-system (system)
+    (interactive (list (let ((systems  (slime-eval '(asdf:registered-systems))))
+                         (completing-read "Load System: " systems))))
+    (slime-eval-async `(asdf:load-system ,system)))
+
+  (defun load-current-asdf-file ()
+    (interactive)
+    (let* ((file-name (buffer-file-name))
+           (code `(cl:prog1 cl:nil (asdf:load-asd ,file-name))))
+      (slime-eval-async code (lambda (result)
+                               (message "Loaded ASDF file: %S" file-name))
+                        "CL-USER")))
+
+  (defun slime-show-current-note ()
+    (interactive)
+    (let ((note (slime-note-at-point)))
+      (slime-show-note note)))
+
+  (defun slime-eval-pprint-last-expression ()
+    (interactive)
+    (insert (slime-eval `(swank:pprint-eval ,(slime-last-expression)))))
+
+  (defun sbcl-with-dynamic-size (size)
+    (interactive "nSize: ")
+    (when size
+      (slime (format "sbcl --dynamic-space-size %s" size))))
+
+  (defun unintern-symbol (symbol package)
+    (interactive (list (slime-read-symbol-name "Unintern symbol: " t)
+                       (slime-read-package-name "from package: "
+                                                (let ((package  (slime-current-package)))
+                                                  (if (char-equal (aref package 0) ?:)
+                                                      (seq-subseq package 1)
+                                                    package)))))
+    (slime-unintern-symbol symbol package))
+
+  (use-package slime
+    :defer t
+    :ensure t
+    :bind (:map slime-mode-map
+                ("C-c c" . slime-export-class)
+                ("C-c s" . slime-export-structure)
+                ("C-c M-a" . load-current-asdf-file)
+                ("C-c e" . slime-show-current-note)
+                ("C-c p" . quickload)
+                ("C-c C-p" . slime-eval-pprint-last-expression)
+                ("C-c C-a" . load-asdf-system)
+                ("C-c u" . unintern-symbol)
+                :map slime-repl-mode-map
+                ("C-c p" . quickload)
+                ("C-c C-a" . load-asdf-system)
+                ("C-c u" . unintern-symbol))
+    :config
+    (setf inferior-lisp-program "sbcl")
+    (slime-setup '(slime-fancy slime-banner slime-company)))
+
+  (use-package slime-company
+    :defer t
+    :ensure t
+    :after (slime company)
+    :config
+    (add-to-list 'company-backends 'company-slime)
+    (setq slime-company-completion 'fuzzy
+          slime-company-after-completion 'slime-company-just-one-space))
+#+end_src
+* Org
+#+begin_src emacs-lisp :tangle lisp/org.el
+  ;; -*- lexical-binding: t; -*-
+  (use-package org
+    :ensure t
+    :bind (:map global-map
+                ("C-c l" . #'org-store-link)
+                ("C-c a" . #'org-agenda)
+                ("C-c c" . #'org-capture))
+    :config
+    (setf org-startup-with-inline-images t
+          org-ellipsis "..."
+          org-hide-leading-stars t
+          org-superstar-headline-bullets-list '(?\ )
+          org-indent-indentation-per-level 2
+          org-indent-mode-turns-on-hiding-stars nil
+          org-display-remote-inline-images 'download
+          org-image-actual-width nil
+          org-return-follows-link t)
+    (add-hook 'org-mode-hook
+              (lambda ()
+                (org-superstar-mode 1)
+                (org-indent-mode 1))))
+
+  (defface org-checkbox-todo
+    '((t (:inherit org-checkbox)))
+    "")
+
+  (defface org-checkbox-done
+    '((t (:inherit org-checkbox :foreground "#427b58")))
+    "")
+
+  (font-lock-add-keywords 'org-mode
+                          `((,(rx "[ ]") 0 'org-checkbox-todo prepend)
+                            (,(rx "[X]") 0 'org-checkbox-done prepend)))
+#+end_src
+* Lsp
+#+begin_src emacs-lisp :tangle lisp/lsp.el
+  ;; -*- lexical-binding: t; -*-
+  (cl-flet ((toggle-hover ()
+              "Toggle hovering documentation." 
+              (interactive) 
+              (setf lsp-ui-doc-show-with-cursor (not lsp-ui-doc-show-with-cursor)) 
+              (lsp-ui-doc-hide)))
+    (use-package lsp-mode
+      :defer t
+      :ensure t
+      :config
+      (setf lsp-auto-execute-action nil
+            lsp-ui-doc-delay 0.5
+            lsp-ui-doc-position 'at-point
+            lsp-ui-doc-show-with-cursor nil)
+      (global-company-mode 1)
+      (keymap-set lsp-mode-map "s-D" #'lsp-find-declaration)
+      (keymap-set lsp-mode-map "s-d" #'lsp-find-definition)
+      (keymap-set lsp-mode-map "s-e" #'lsp-treemacs-errors-list)
+      (keymap-set lsp-mode-map "s-i" #'lsp-find-implementation)
+      (keymap-set lsp-mode-map "s-R" #'lsp-rename)
+      (keymap-set lsp-mode-map "s-c" #'lsp-execute-code-action)
+      (keymap-set lsp-mode-map "s-r" #'lsp-find-references)
+      (keymap-set lsp-mode-map "C-M-k" #'toggle-hover)))
+#+end_src
+* Evil
+#+begin_src emacs-lisp :tangle lisp/evil.el
+  ;; -*- lexical-binding: t; -*-
+  (use-package undo-tree
+    :ensure t
+    :config
+    (setf undo-tree-auto-save-history nil)
+    :init
+    (global-undo-tree-mode 1))
+
+
+  (setf evil-want-integration t
+        evil-want-keybinding nil)
+
+  (use-package evil
+    :ensure t
+    :after undo-tree
+    :init (evil-mode 1)
+    :config
+    (dolist (map (list evil-insert-state-map evil-normal-state-map evil-visual-state-map))
+      (keymap-unset map "C-z")
+      (keymap-unset map "C-z") 
+      (keymap-set map "C-z" (make-sparse-keymap)) 
+      (keymap-set map "C-z C-s" #'shell-command-on-region)
+      (keymap-set map "C-z C-f" #'ffap))
+    (evil-set-undo-system 'undo-tree)
+    (keymap-set evil-normal-state-map "C-S-d"
+                (lambda ()
+                  (interactive)
+                  (evil-scroll-up 0)
+                  (evil-scroll-line-to-center nil)))
+    (keymap-set evil-normal-state-map "C-d"
+                (lambda ()
+                  (interactive)
+                  (evil-scroll-down 0)
+                  (evil-scroll-line-to-center nil))))
+
+  (use-package evil-collection
+    :ensure t
+    :after evil
+    :config
+    (evil-collection-init))
+#+end_src
+* Gnus
+#+begin_src emacs-lisp :tangle lisp/gnus.el
+  ;; -*- lexical-binding: t; -*-
+
+  (setf user-mail-address (getenv "MAIL_ADDRESS")
+        user-full-name "luminous99"
+        message-send-mail-function 'smtpmail-send-it
+        smtpmail-default-smtp-server "smtp.gmail.com"
+        calendar-date-style 'european)
+
+  (use-package gnus
+    :defer t
+    :ensure t
+    :config
+    (setq gnus-article-sort-functions
+          '(gnus-article-sort-by-date
+            gnus-article-sort-by-number gnus-article-sort-by-author
+            gnus-article-sort-by-subject gnus-article-sort-by-score)
+          gnus-select-method '(nnimap "gmail"
+                                      (nnimap-address "imap.gmail.com")
+                                      (nnimap-server-port 993)
+                                      (nnimap-stream ssl)))
+    (gnus-demon-add-handler 'gnus-demon-scan-news 10 10)
+    (gnus-demon-init))
+#+end_src
+* Completion
+#+begin_src emacs-lisp :tangle lisp/completion.el
+  ;; -*- lexical-binding: t; -*-
+
+  (use-package vertico
+    :ensure t
+    :config
+    (vertico-mode 1))
+
+  (use-package marginalia
+    :ensure t
+    :after vertico
+    :config
+    (marginalia-mode 1))
+
+  (use-package orderless
+    :ensure t
+    :after marginalia
+    :custom
+    (completion-styles '(orderless basic))
+    (completion-category-overrides '((file (styles basic partial-completion)))))
+
+  (use-package company
+    :ensure t
+    :config
+    (global-company-mode 1)
+    (setf company-selection-wrap-around t
+          company-tooltip-idle-delay 0.1)
+    (company-quickhelp-mode 1))
+
+  (cl-flet ((append-yasnippet (backend)
+              (if (atom backend)
+                  `(,backend :with company-yasnippet)
+                backend)))
+    (use-package yasnippet
+      :defer t
+      :ensure t
+      :after (company)
+      :config
+      (yas-global-mode 1)
+      (keymap-set company-mode-map "s-<tab>" #'yas-expand)
+      (setf company-backends (mapcar #'append-yasnippet company-backends))))
+#+end_src
+* Theme
+#+begin_src emacs-lisp :tangle lisp/theme.el
+  ;; -*- lexical-binding: t; -*-
+
+  (defun toggle-modus ()
+    "Do `modus-themes-toggle' and possibly restart `org-mode'."
+    (interactive)
+    (modus-themes-toggle)
+    (when (eq major-mode 'org-mode)
+      (org-mode-restart)))
+
+  (use-package modus-themes
+    :ensure t
+    :config
+    (setf modus-themes-common-palette-overrides
+          modus-themes-preset-overrides-warmer
+          modus-themes-completions
+          '((matches . (extrabold underline))
+            (selection . (bold)))
+          modus-themes-prompts '(ultrabold)
+          modus-themes-to-toggle '(modus-operandi modus-vivendi-tinted))
+    (modus-themes-select 'modus-operandi)
+    (keymap-global-set "<f5>" #'toggle-modus))
+
+  (use-package doom-modeline
+    :ensure t
+    :custom (doom-modeline-buffer-file-name-style 'buffer-name)
+    :config
+    (doom-modeline-mode t))
+#+end_src
+* Miscellaneous
+** Multiple cursors
+#+begin_src emacs-lisp :tangle lisp/misc.el
+  (use-package multiple-cursors
+    :defer t
+    :ensure t
+    :bind (("C-S-c C-S-c" . mc/edit-lines)
+           ("C->" . mc/mark-next-like-this)
+           ("C-M->" . mc/skip-to-next-like-this)
+           ("C-<" . mc/mark-previous-like-this)
+           ("C-M-<" . mc/skip-to-previous-like-this)
+           ("C-c C-<" . mc/mark-all-like-this))
+    :config
+    (setf mc/always-run-for-all t)
+    (add-hook 'prog-mode-hook (lambda (&rest args) (multiple-cursors-mode 1))))
+#+end_src
+** C/C++
+#+begin_src emacs-lisp :tangle lisp/misc.el
+  (add-hook 'c-mode-hook (lambda ()
+                           (c-toggle-electric-state 1)
+                           (c-toggle-comment-style -1)
+                           (c-toggle-cpp-indent-to-body 1)
+                           (c-set-style "stroustrup")))
+
+  (add-hook 'c-mode-hook #'lsp)
+  (add-hook 'c++-mode-hook #'lsp)
+#+end_src
+** Emms
+#+begin_src emacs-lisp :tangle lisp/misc.el
+  (use-package emms
+    :defer t
+    :ensure t
+    :config
+    (emms-all)
+    (emms-mpris-enable)
+    (setf emms-browser-covers #'emms-browser-cache-thumbnail-async
+          emms-browser-thumbnail-small-size 128
+          emms-browser-thumbnail-medium-size 256
+          emms-browser-thumbnail-large-size 512
+          emms-source-playlist-default-format 'm3u
+          emms-source-file-default-directory "~/Music/"
+          emms-player-list (list emms-player-mpv)))
+#+end_src
+** Which key
+#+begin_src emacs-lisp :tangle lisp/misc.el
+  (use-package which-key
+    :ensure t
+    :config
+    (which-key-mode 1))
+#+end_src
+** Docker
+#+begin_src emacs-lisp :tangle lisp/misc.el
+  (use-package docker
+    :defer t
+    :ensure t
+    :config
+    (keymap-global-set "C-c d" #'docker))
+#+end_src
+** Replace execute-extended-command
+#+begin_src emacs-lisp :tangle lisp/misc.el
+
+  (defun execute-and-save ()
+    "Runs `execute-extended-command' and based on the prefix argument
+  save it's output from *Messages* to the `kill-ring'."
+    (interactive)
+    (execute-extended-command current-prefix-arg)
+    (when current-prefix-arg
+      (with-current-buffer "*Messages*"
+        (save-excursion
+          (forward-line (1- (car (buffer-line-statistics))))
+          (kill-new (thing-at-point 'line))
+          (setf (car kill-ring) (string-trim (car kill-ring)))))))
+
+  (keymap-global-set "M-x" #'execute-and-save)
+#+end_src
+** Dired
+#+begin_src emacs-lisp :tangle lisp/misc.el
+  (setf dired-dwim-target #'dired-dwim-target-next-visible
+        dired-create-destination-dirs 'always
+        dired-listing-switches "-alh" 
+        dired-mouse-drag-files t
+        dired-auto-revert-buffer #'dired-directory-changed-p)
+  (keymap-global-set "C-x C-d" #'dired)
+  (keymap-global-set "C-x d" #'list-directory)
+  (keymap-global-set "s-d" #'ispell-change-dictionary)
+#+end_src
+** Remainder
+#+begin_src emacs-lisp :tangle lisp/misc.el
+  (defun scratch-buffer ()
+    "Switch to the *scratch* buffer.
+     If the buffer doesn't exist, create it first."
+    (interactive)
+    (let ((initial-major-mode 'emacs-lisp-mode))
+      (pop-to-buffer-same-window (get-scratch-buffer-create))))
+
+  (with-current-buffer "*scratch*"
+    (emacs-lisp-mode))
+#+end_src
