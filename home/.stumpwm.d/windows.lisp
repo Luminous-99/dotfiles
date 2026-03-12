@@ -166,9 +166,8 @@
       (undefine-keys *top-map* "Left" "Right" "Up" "Down" "RET")))
 
 (defcommand terminate (window) ()
-  (bt:with-lock-held ((gethash :lock (window-plist window)))
-    (delete-window window)
-    (toggle-gaps)))
+  (delete-window window)
+  (toggle-gaps))
 
 (defcommand close-window-and-frame () ()
   (handler-case

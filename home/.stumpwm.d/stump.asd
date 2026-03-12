@@ -6,7 +6,7 @@
   :components ((:file "symbol-hooks")
                (:file "misc")
                (:file "contrib")
-               (:file "window-decorator")
+               ; (:file "window-decorator")
                (:file "scratchpad")
                (:file "window-preference")
                (:file "windows")

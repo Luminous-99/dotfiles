@@ -29,6 +29,7 @@
    #:run-application)
   (:import-from :symbol-hooks #:define-symbol-hook #:hooked-symbol-p)
   (:import-from :alexandria #:when-let* #:when-let)
+  (:import-from :stumpwm #:grab-keyboard #:ungrab-keyboard)
   (:shadowing-import-from :symbol-hooks #:setf))
 
 (in-package :misc)
@@ -296,14 +297,16 @@ VARIABLE-NAMES are the variables used in your common lisp to be evaluated before
         (run-application name)))))
 
 (defun collect-digit-arguments ()
-  (prog2 (stumpwm::grab-keyboard (window-xwin (current-window)))
-      (loop with key = nil
-            while (setf key (read-one-char (current-screen)))
-            if (digit-char-p key)
-              collect key into keys
-            else
-              return keys)
-    (stumpwm::ungrab-keyboard)))
+  (grab-pointer (current-screen))
+  (grab-keyboard (window-xwin (current-window)))
+  (loop with key = nil
+        while (setf key (read-one-char (current-screen)))
+        if (digit-char-p key)
+          collect key into keys
+        else
+          do (ungrab-pointer)
+             (ungrab-keyboard)
+             (return keys)))
 
 (defun digit-argument ()
   (let ((digits (coerce (collect-digit-arguments) 'string)))
@@ -311,22 +314,26 @@ VARIABLE-NAMES are the variables used in your common lisp to be evaluated before
       (parse-integer digits))))
 
 (defun key-argument ()
-  (prog2 (stumpwm::grab-keyboard (window-xwin (current-window)))
-      (multiple-value-list (stumpwm::read-from-keymap (list *top-map*)))
-    (stumpwm::ungrab-keyboard)))
+  (let (key)
+    (grab-pointer (current-screen))
+    (grab-keyboard (window-xwin (current-window)))
+    (setq key (multiple-value-list (stumpwm::read-from-keymap (list *top-map*))))
+    (ungrab-keyboard)
+    (ungrab-pointer)
+    key))
 
 (defcommand universal-argument (&optional number key) ()
   (let ((number (or number (digit-argument)))
         (key (or key (key-argument))))
     (when number
       (handler-case
-          (dotimes (i number)
-            (let* ((command (car key))
-                   (key (caadr key)))
+          (let* ((command (car key))
+                 (key (caadr key)))
+            (dotimes (i number)
               (if (stringp command)
                   (run-commands command)
                   (stumpwm::send-fake-key (current-window) key))))
-        (error (err) (message "~a" err))))))
+        (error (err) (message "~A" err))))))
 
 (define-keys *root-map*
   ("u" . "universal-argument")
